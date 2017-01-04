@@ -48,18 +48,25 @@
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+    <site.path>/</site.path>
+
     <appveyor-swagger-version>master</appveyor-swagger-version>
     <build-helper-maven-plugin-version>1.12</build-helper-maven-plugin-version>
     <bval-version>1.1.2</bval-version>
+    <copy-rename-maven-plugin-version>1.0.1</copy-rename-maven-plugin-version>
     <geronimo-validation-version>1.0</geronimo-validation-version>
     <gson-version>2.6.2</gson-version>
     <jodatime-version>2.9.3</jodatime-version>
     <maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
+    <maven-project-info-reports-plugin-version>2.9</maven-project-info-reports-plugin-version>
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
     <maven-replacer-plugin-version>1.5.3</maven-replacer-plugin-version>
+    <maven-resources-plugin-version>3.0.2</maven-resources-plugin-version>
+    <maven-site-plugin-version>3.6</maven-site-plugin-version>
     <maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
     <migbase64-version>2.2</migbase64-version>
     <okhttp-version>2.7.5</okhttp-version>
+    <site-maven-plugin-version>0.12</site-maven-plugin-version>
     <swagger-annotations-version>1.5.8</swagger-annotations-version>
     <!-- Needs:
          https://github.com/swagger-api/swagger-codegen/pull/4473
@@ -69,6 +76,15 @@
     <swagger-request-validator-version>1.0.8-SNAPSHOT</swagger-request-validator-version>
     <testng-version>6.10</testng-version>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <properties>
+        <site.path>${project.version}</site.path>
+      </properties>
+    </profile>
+  </profiles>
 
   <dependencies>
     <dependency>
@@ -209,6 +225,67 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>com.coderplus.maven.plugins</groupId>
+        <artifactId>copy-rename-maven-plugin</artifactId>
+        <version>${copy-rename-maven-plugin-version}</version>
+        <executions>
+          <!-- Use README.md as index.html in generated site -->
+          <execution>
+            <id>copy-readme-to-site-index</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <sourceFile>${basedir}/README.md</sourceFile>
+              <destinationFile>${project.build.directory}/generated-site/markdown/index.md</destinationFile>
+            </configuration>
+          </execution>
+          <!-- Use Swagger README.md as index.html in swaggerdocs -->
+          <execution>
+            <id>copy-readme-to-swaggerdocs-index</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <sourceFile>${project.build.directory}/generated-sources/swagger/README.md</sourceFile>
+              <destinationFile>${project.build.directory}/generated-site/markdown/swaggerdocs/index.md</destinationFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin-version}</version>
+        <executions>
+          <execution>
+            <!-- Include swagger-generated docs in generated site. -->
+            <id>copy-docs</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <!-- Must match site configuration generatedSiteDirectory -->
+              <outputDirectory>${project.build.directory}/generated-site/markdown/swaggerdocs/docs</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/generated-sources/swagger/docs</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Included to silence warning https://stackoverflow.com/a/18734846 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>${maven-project-info-reports-plugin-version}</version>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
         <version>${maven-release-plugin-version}</version>
@@ -216,12 +293,32 @@
           <completionGoals>replacer:replace</completionGoals>
           <pushChanges>false</pushChanges>
           <tagNameFormat>v@{project.version}</tagNameFormat>
+          <useReleaseProfile>true</useReleaseProfile>
         </configuration>
       </plugin>
       <plugin>
         <groupId>com.google.code.maven-replacer-plugin</groupId>
         <artifactId>replacer</artifactId>
         <version>${maven-replacer-plugin-version}</version>
+        <executions>
+          <!-- Change links in swaggerdocs to point to .html files -->
+          <execution>
+            <id>fix-swaggerdocs-links</id>
+            <phase>site</phase>
+            <goals>
+              <goal>replace</goal>
+            </goals>
+            <configuration>
+              <file>${project.build.directory}/site/swaggerdocs/index.html</file>
+              <replacements>
+                <replacement>
+                  <token>\.md</token>
+                  <value>.html</value>
+                </replacement>
+              </replacements>
+            </configuration>
+          </execution>
+        </executions>
         <!-- Freeze the Swagger version during release. -->
         <configuration>
           <file>${basedir}/release-pom.xml</file>
@@ -231,6 +328,35 @@
               <value><![CDATA[<appveyor-swagger-version>${project.version}</appveyor-swagger-version>]]></value>
             </replacement>
           </replacements>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!-- Deploy the web site -->
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>${site-maven-plugin-version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>site-deploy</phase>
+            <configuration>
+              <server>github</server>
+              <message>[site-maven-plugin] Deploy site</message>
+              <path>${site.path}</path>
+              <merge>true</merge>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>${maven-site-plugin-version}</version>
+        <configuration>
+          <!-- Avoid conflict with GitHub site-maven-plugin -->
+          <skipDeploy>true</skipDeploy>
         </configuration>
       </plugin>
     </plugins>
@@ -251,6 +377,29 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin-version}</version>
+        <configuration>
+          <links>
+            <link>https://square.github.io/okhttp/2.x/okhttp/</link>
+            <link>http://www.joda.org/joda-time/apidocs/</link>
+            <link>https://www.javadoc.io/doc/com.google.code.gson/gson/${gson-version}</link>
+            <link>http://docs.swagger.io/swagger-core/apidocs/</link>
+          </links>
+        </configuration>
+        <!-- Prevent duplicate execution of generate-sources
+             https://maven.apache.org/plugins/maven-javadoc-plugin/examples/javadoc-nofork.html -->
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>javadoc-no-fork</report>
+              <report>test-javadoc-no-fork</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>${maven-surefire-plugin-version}</version>
       </plugin>
     </plugins>
   </reporting>

@@ -90,6 +90,15 @@ mvn package
 
 The generated JAR file will be at `target/appveyor-swagger-0.1.0.jar`.
 
+## Documentation
+
+The [project documentation](https://kevinoid.github.io/appveyor-swagger-java/)
+includes [Javadoc](https://kevinoid.github.io/appveyor-swagger-java/apidocs/)
+and [Swagger-generated endpoint and model
+documentation](https://kevinoid.github.io/appveyor-swagger-java/swaggerdocs/#Documentation_for_API_Endpoints).
+There is also [Swagger API
+Documentation](https://kevinoid.github.io/appveyor-swagger).
+
 ## License
 
 This library is available under the terms of the
