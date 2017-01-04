@@ -1,0 +1,11 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<!-- Running in parallel doesn't seem to respect dependsOnMethod.
+     Perhaps https://github.com/cbeust/testng/pull/1158 will fix it?
+<suite name="AppVeyor" parallel="methods" preserve-order="false"> -->
+<suite name="AppVeyor" preserve-order="false">
+  <test name="AppVeyor">
+    <packages>
+      <package name="name.kevinlocke.appveyor" />
+    </packages>
+  </test>
+</suite>

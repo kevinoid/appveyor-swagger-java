@@ -1,0 +1,257 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>name.kevinlocke.appveyor</groupId>
+  <artifactId>appveyor-swagger</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>AppVeyor REST API Client (from Swagger)</name>
+  <description>
+    AppVeyor REST API Client generated from the unofficial Swagger API
+    definition in Java.
+  </description>
+  <url>https://kevinoid.github.io/appveyor-swagger-java</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/mit-license</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>kevinoid</id>
+      <name>Kevin Locke</name>
+      <email>kevin@kevinlocke.name</email>
+      <url>https://kevinlocke.name</url>
+    </developer>
+  </developers>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/kevinoid/appveyor-swagger-java/issues</url>
+  </issueManagement>
+
+  <scm>
+    <url>https://github.com/kevinoid/appveyor-swagger-java</url>
+    <connection>scm:git:git://github.com/kevinoid/appveyor-swagger-java.git</connection>
+    <developerConnection>scm:git:git@github.com:kevinoid/appveyor-swagger-java.git</developerConnection>
+  </scm>
+
+  <properties>
+    <java.version>1.8</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <appveyor-swagger-version>master</appveyor-swagger-version>
+    <build-helper-maven-plugin-version>1.12</build-helper-maven-plugin-version>
+    <bval-version>1.1.2</bval-version>
+    <geronimo-validation-version>1.0</geronimo-validation-version>
+    <gson-version>2.6.2</gson-version>
+    <jodatime-version>2.9.3</jodatime-version>
+    <maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
+    <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
+    <maven-replacer-plugin-version>1.5.3</maven-replacer-plugin-version>
+    <maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
+    <migbase64-version>2.2</migbase64-version>
+    <okhttp-version>2.7.5</okhttp-version>
+    <swagger-annotations-version>1.5.8</swagger-annotations-version>
+    <!-- Needs:
+         https://github.com/swagger-api/swagger-codegen/pull/4473
+         https://github.com/swagger-api/swagger-parser/pull/363 -->
+    <swagger-codegen-maven-plugin-version>2.2.2-SNAPSHOT</swagger-codegen-maven-plugin-version>
+    <!-- Needs https://bitbucket.org/atlassian/swagger-request-validator/pull-requests/18 -->
+    <swagger-request-validator-version>1.0.8-SNAPSHOT</swagger-request-validator-version>
+    <testng-version>6.10</testng-version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.swagger</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>${swagger-annotations-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp</groupId>
+      <artifactId>logging-interceptor</artifactId>
+      <version>${okhttp-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${gson-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>${jodatime-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.brsanthu</groupId>
+      <artifactId>migbase64</artifactId>
+      <version>${migbase64-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-validation_1.1_spec</artifactId>
+      <version>${geronimo-validation-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bval</groupId>
+      <artifactId>org.apache.bval.bundle</artifactId>
+      <version>${bval-version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <version>${testng-version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.atlassian.oai</groupId>
+      <artifactId>swagger-request-validator-core</artifactId>
+      <version>${swagger-request-validator-version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.googlecode.maven-download-plugin</groupId>
+        <artifactId>download-maven-plugin</artifactId>
+        <version>1.3.0</version>
+        <executions>
+          <execution>
+            <id>get-appveyor-swagger</id>
+            <!-- Note: Although this is a resource, it needs to run in
+                 generate-sources rather than generate-resources because
+                 swagger-codegen (in generate-sources) depends on it. -->
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>wget</goal>
+            </goals>
+            <configuration>
+              <url>https://github.com/kevinoid/appveyor-swagger/raw/${appveyor-swagger-version}/swagger.yaml</url>
+              <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
+              <skipCache>true</skipCache>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.swagger</groupId>
+        <artifactId>swagger-codegen-maven-plugin</artifactId>
+        <version>${swagger-codegen-maven-plugin-version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.build.directory}/generated-resources/swagger.yaml</inputSpec>
+              <invokerPackage>${project.groupId}</invokerPackage>
+              <apiPackage>${project.groupId}.api</apiPackage>
+              <modelPackage>${project.groupId}.model</modelPackage>
+              <language>java</language>
+              <library>okhttp-gson</library>
+              <configOptions>
+                <dateLibrary>joda</dateLibrary>
+                <ensureUniqueParams>false</ensureUniqueParams>
+                <useBeanValidation>true</useBeanValidation>
+                <performBeanValidation>true</performBeanValidation>
+              </configOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Only required if addCompileSourceRoot is set false for codegen-maven
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build-helper-maven-plugin-version}</version>
+        <executions>
+          <execution>
+            <id>add-generated-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/swagger/main/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin-version}</version>
+        <configuration>
+          <suiteXmlFiles>
+            <suiteXmlFile>${basedir}/src/test/java/testng.xml</suiteXmlFile>
+          </suiteXmlFiles>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>${maven-release-plugin-version}</version>
+        <configuration>
+          <completionGoals>replacer:replace</completionGoals>
+          <pushChanges>false</pushChanges>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <version>${maven-replacer-plugin-version}</version>
+        <!-- Freeze the Swagger version during release. -->
+        <configuration>
+          <file>${basedir}/release-pom.xml</file>
+          <replacements>
+            <replacement>
+              <token><![CDATA[<appveyor-swagger-version>master</appveyor-swagger-version>]]></token>
+              <value><![CDATA[<appveyor-swagger-version>${project.version}</appveyor-swagger-version>]]></value>
+            </replacement>
+          </replacements>
+        </configuration>
+      </plugin>
+    </plugins>
+
+    <resources>
+      <resource>
+        <directory>${project.build.directory}/generated-resources</directory>
+        <includes>
+          <include>**/*.yaml</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin-version}</version>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>
