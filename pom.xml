@@ -219,6 +219,12 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin-version}</version>
         <configuration>
+          <properties>
+            <property>
+              <name>surefire.testng.verbose</name>
+              <value>2</value>
+            </property>
+          </properties>
           <suiteXmlFiles>
             <suiteXmlFile>${basedir}/src/test/java/testng.xml</suiteXmlFile>
           </suiteXmlFiles>
