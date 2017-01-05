@@ -1,0 +1,32 @@
+-classpath
+'/home/kevin/.m2/repository/com/google/code/gson/gson/2.6.2/gson-2.6.2.jar:/home/kevin/.m2/repository/joda-time/joda-time/2.9.3/joda-time-2.9.3.jar:/home/kevin/.m2/repository/org/apache/geronimo/specs/geronimo-validation_1.1_spec/1.0/geronimo-validation_1.1_spec-1.0.jar:/home/kevin/.m2/repository/com/squareup/okio/okio/1.6.0/okio-1.6.0.jar:/home/kevin/.m2/repository/io/swagger/swagger-annotations/1.5.8/swagger-annotations-1.5.8.jar:/home/kevin/.m2/repository/org/apache/bval/org.apache.bval.bundle/1.1.2/org.apache.bval.bundle-1.1.2.jar:/home/kevin/.m2/repository/com/squareup/okhttp/okhttp/2.7.5/okhttp-2.7.5.jar:/home/kevin/.m2/repository/com/squareup/okhttp/logging-interceptor/2.7.5/logging-interceptor-2.7.5.jar:/home/kevin/.m2/repository/com/brsanthu/migbase64/2.2/migbase64-2.2.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/home/kevin/src/node-projects/appveyor-swagger-java/target/generated-sources/swagger/src/main/java:/home/kevin/src/node-projects/appveyor-swagger-java/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2017. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/home/kevin/src/node-projects/appveyor-swagger-java/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'AppVeyor REST API Client (from Swagger) 0.1.0-SNAPSHOT API'
+-link
+'https://square.github.io/okhttp/2.x/okhttp'
+-link
+'http://www.joda.org/joda-time/apidocs'
+-link
+'https://www.javadoc.io/doc/com.google.code.gson/gson/2.6.2'
+-link
+'http://docs.swagger.io/swagger-core/apidocs'
+-linkoffline
+'http://docs.oracle.com/javase/8/docs/api' '/home/kevin/src/node-projects/appveyor-swagger-java/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'AppVeyor REST API Client (from Swagger) 0.1.0-SNAPSHOT API'
