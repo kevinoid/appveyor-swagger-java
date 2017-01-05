@@ -31,6 +31,13 @@
     </developer>
   </developers>
 
+  <distributionManagement>
+    <site>
+      <id>site</id>
+      <url>scm:git:git@github.com:kevinoid/appveyor-swagger-java.git</url>
+    </site>
+  </distributionManagement>
+
   <issueManagement>
     <system>GitHub</system>
     <url>https://github.com/kevinoid/appveyor-swagger-java/issues</url>
@@ -62,11 +69,11 @@
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
     <maven-replacer-plugin-version>1.5.3</maven-replacer-plugin-version>
     <maven-resources-plugin-version>3.0.2</maven-resources-plugin-version>
+    <maven-scm-publish-plugin-version>1.1</maven-scm-publish-plugin-version>
     <maven-site-plugin-version>3.6</maven-site-plugin-version>
     <maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
     <migbase64-version>2.2</migbase64-version>
     <okhttp-version>2.7.5</okhttp-version>
-    <site-maven-plugin-version>0.12</site-maven-plugin-version>
     <swagger-annotations-version>1.5.8</swagger-annotations-version>
     <!-- Needs:
          https://github.com/swagger-api/swagger-codegen/pull/4473
@@ -337,33 +344,44 @@
         </configuration>
       </plugin>
       <plugin>
-        <!-- Deploy the web site -->
-        <groupId>com.github.github</groupId>
-        <artifactId>site-maven-plugin</artifactId>
-        <version>${site-maven-plugin-version}</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>${maven-site-plugin-version}</version>
+        <configuration>
+          <!-- Let maven-scm-publish-plugin do the deployment.
+               It is possible to deploy using wagon as documented at
+               https://maven.apache.org/wagon/wagon-providers/wagon-scm/usage.html
+               But the limitations noted on that page (no removal of obsolete
+               files, one commit per file) are unacceptable. -->
+          <skipDeploy>true</skipDeploy>
+        </configuration>
         <executions>
           <execution>
+            <id>stage-for-scm-publish</id>
+            <phase>post-site</phase>
             <goals>
-              <goal>site</goal>
+              <goal>stage</goal>
             </goals>
-            <phase>site-deploy</phase>
-            <configuration>
-              <server>github</server>
-              <message>[site-maven-plugin] Deploy site</message>
-              <path>${site.path}</path>
-              <merge>true</merge>
-            </configuration>
           </execution>
         </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>${maven-site-plugin-version}</version>
+        <artifactId>maven-scm-publish-plugin</artifactId>
+        <version>${maven-scm-publish-plugin-version}</version>
         <configuration>
-          <!-- Avoid conflict with GitHub site-maven-plugin -->
-          <skipDeploy>true</skipDeploy>
+          <scmBranch>gh-pages</scmBranch>
+          <tryUpdate>true</tryUpdate>
         </configuration>
+        <executions>
+          <execution>
+            <id>scm-publish</id>
+            <phase>site-deploy</phase>
+            <goals>
+              <goal>publish-scm</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
 
