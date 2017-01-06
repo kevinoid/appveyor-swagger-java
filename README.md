@@ -99,6 +99,17 @@ documentation](https://kevinoid.github.io/appveyor-swagger-java/swaggerdocs/#Doc
 There is also [Swagger API
 Documentation](https://kevinoid.github.io/appveyor-swagger).
 
+## Testing
+
+Running the tests defined in this project requires an AppVeyor account.  The
+[API Token](https://ci.appveyor.com/api-token) must be set in the environment
+variable `$APPVEYOR_API_TOKEN` when running the tests.  This can be
+accomplished as follows:
+
+```sh
+APPVEYOR_API_TOKEN=deadbeef mvn test
+```
+
 ## License
 
 This library is available under the terms of the
