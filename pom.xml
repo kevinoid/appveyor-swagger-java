@@ -76,8 +76,8 @@
     <okhttp-version>2.7.5</okhttp-version>
     <swagger-annotations-version>1.5.8</swagger-annotations-version>
     <!-- Needs:
-         https://github.com/swagger-api/swagger-codegen/pull/4473
-         https://github.com/swagger-api/swagger-parser/pull/363 -->
+         https://github.com/swagger-api/swagger-codegen/pull/4473 (409e1a50)
+         https://github.com/swagger-api/swagger-parser/pull/363 (df14c698) -->
     <swagger-codegen-maven-plugin-version>2.2.2-SNAPSHOT</swagger-codegen-maven-plugin-version>
     <!-- Needs https://bitbucket.org/atlassian/swagger-request-validator/pull-requests/18 -->
     <swagger-request-validator-version>1.0.8-SNAPSHOT</swagger-request-validator-version>
