@@ -1,5 +1,7 @@
 package name.kevinlocke.appveyor;
 
+import static name.kevinlocke.appveyor.testutils.AssertMediaType.assertIsPng;
+import static name.kevinlocke.appveyor.testutils.AssertMediaType.assertIsSvg;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
@@ -11,10 +13,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
@@ -78,6 +83,10 @@ import name.kevinlocke.appveyor.testutils.TestApiClient;
  * class.
  */
 public class ApiTest {
+	public static final String TEST_BADGE_PROVIDER = RepositoryProvider.GITHUB
+			.toString();
+	public static final String TEST_BADGE_ACCOUNT = "gruntjs";
+	public static final String TEST_BADGE_SLUG = "grunt";
 	// Must exist and can not be created by the account used for testing
 	public static final String TEST_COLLABORATOR_EMAIL = "kevin@kevinlocke.name";
 	public static final String TEST_COLLABORATOR_ROLE_NAME = "User";
@@ -319,8 +328,7 @@ public class ApiTest {
 	@Test(dependsOnMethods = "getUsers", groups = "user")
 	public void getUser() throws ApiException {
 		Integer testUserId = testUser.getUserId();
-		UserAccountRolesResults userRoles = userApi
-				.getUser(testUserId);
+		UserAccountRolesResults userRoles = userApi.getUser(testUserId);
 		UserAccount gotUser = userRoles.getUser();
 		assertNotNull(gotUser, "Test user not found");
 		assertEquals(gotUser.getUserId(), testUserId);
@@ -455,7 +463,8 @@ public class ApiTest {
 		DeploymentEnvironmentAddition environmentAddition = new DeploymentEnvironmentAddition()
 				.name(TEST_ENVIRONMENT_NAME)
 				.provider(DeploymentProviderType.WEBHOOK).settings(settings);
-		DeploymentEnvironmentWithSettings environment = environmentApi.addEnvironment(environmentAddition);
+		DeploymentEnvironmentWithSettings environment = environmentApi
+				.addEnvironment(environmentAddition);
 		testEnvironment = environment;
 		assertEquals(environment.getName(), TEST_ENVIRONMENT_NAME);
 	}
@@ -529,8 +538,7 @@ public class ApiTest {
 		Project project = projectApi.addProject(projectAddition);
 		testProject = project;
 
-		assertEquals(project.getRepositoryType(),
-				TEST_PROJECT_REPO_PROVIDER);
+		assertEquals(project.getRepositoryType(), TEST_PROJECT_REPO_PROVIDER);
 		assertEquals(project.getRepositoryName(), TEST_PROJECT_REPO_NAME);
 	}
 
@@ -561,10 +569,8 @@ public class ApiTest {
 		ProjectWithConfiguration projectConfig = settings.getSettings();
 		testProjectConfig = projectConfig;
 		Project project = testProject;
-		assertEquals(projectConfig.getProjectId(),
-				project.getProjectId());
-		assertEquals(projectConfig.getAccountId(),
-				project.getAccountId());
+		assertEquals(projectConfig.getProjectId(), project.getProjectId());
+		assertEquals(projectConfig.getAccountId(), project.getAccountId());
 		assertEquals(projectConfig.getAccountName(), accountName);
 		assertEquals(projectConfig.getSlug(), slug);
 
@@ -627,7 +633,10 @@ public class ApiTest {
 	// Canceled builds do not show up in all queries, so it does not make a
 	// good testBuild for the other tests. So it is run first separately.
 	// Uncomment after https://github.com/cbeust/testng/pull/1158
-	@Test(dependsOnMethods = "addProject", groups = "project" /*, priority = -2*/)
+	@Test(dependsOnMethods = "addProject", groups = "project" /*
+																 * , priority =
+																 * -2
+																 */)
 	public void cancelBuild() throws ApiException {
 		// Create a new build to cancel, since cancelled builds do not show
 		// up in all queries, it would not be good for testBuild to be cancelled
@@ -662,7 +671,8 @@ public class ApiTest {
 
 	// Set priority < 0 so build is started early and can run in background
 	// Uncomment after https://github.com/cbeust/testng/pull/1158
-	@Test(dependsOnMethods = "updateProjectBuildNumber", groups = "project" /*, priority = -1*/)
+	@Test(dependsOnMethods = "updateProjectBuildNumber", groups = "project"
+	/* , priority = -1 */)
 	public void startBuild() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -679,7 +689,10 @@ public class ApiTest {
 	// This is not really a test, but is used for synchronization by other tests
 	// Set priority > 0 so build can run during default priority tests
 	// Uncomment after https://github.com/cbeust/testng/pull/1158
-	@Test(dependsOnMethods = "startBuild", groups = "project" /*, priority = 1 */)
+	@Test(dependsOnMethods = "startBuild", groups = "project" /*
+																 * , priority =
+																 * 1
+																 */)
 	public void waitForBuild() throws ApiException, InterruptedException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -699,6 +712,105 @@ public class ApiTest {
 		Build build = projectBuild.getBuild();
 		testBuild = build;
 		assertNotNull(build.getFinished());
+	}
+
+	// Note: Will 404 for projects with no build
+	@Test(dependsOnMethods = "waitForBuild", groups = "project")
+	public void getProjectStatusBadge()
+			throws ApiException, FileNotFoundException, IOException {
+		String webhookId = testProjectConfig.getWebhookId();
+		File pngBadge = projectApi.getProjectStatusBadge(webhookId, false,
+				false, null, null, null);
+		assertTrue(pngBadge.exists());
+		long pngSize = pngBadge.length();
+		try {
+			assertIsPng(pngBadge.toPath());
+		} finally {
+			pngBadge.delete();
+		}
+
+		File retinaBadge = projectApi.getProjectStatusBadge(webhookId, false,
+				true, null, null, null);
+		assertTrue(retinaBadge.exists());
+		long retinaSize = retinaBadge.length();
+		try {
+			assertIsPng(retinaBadge.toPath());
+
+			assertTrue(retinaSize > pngSize);
+		} finally {
+			retinaBadge.delete();
+		}
+
+		String uid = new BigInteger(128, new Random()).toString(36);
+		File svgBadge = projectApi.getProjectStatusBadge(webhookId, true, false,
+				uid, uid, uid);
+		assertTrue(svgBadge.exists());
+		try {
+			assertIsSvg(svgBadge.toPath());
+
+			String svgBadgeText = new String(
+					Files.readAllBytes(svgBadge.toPath()));
+			assertTrue(svgBadgeText.contains(uid));
+		} finally {
+			svgBadge.delete();
+		}
+	}
+
+	@Test
+	public void getPublicProjectStatusBadge()
+			throws ApiException, FileNotFoundException, IOException {
+		File pngBadge = projectApi.getPublicProjectStatusBadge(
+				TEST_BADGE_PROVIDER, TEST_BADGE_ACCOUNT, TEST_BADGE_SLUG, null,
+				false, false, null, null, null);
+		assertTrue(pngBadge.exists());
+		long pngSize = pngBadge.length();
+		try {
+			assertIsPng(pngBadge.toPath());
+		} finally {
+			pngBadge.delete();
+		}
+
+		File retinaBadge = projectApi.getPublicProjectStatusBadge(
+				TEST_BADGE_PROVIDER, TEST_BADGE_ACCOUNT, TEST_BADGE_SLUG, null,
+				false, true, null, null, null);
+		assertTrue(retinaBadge.exists());
+		long retinaSize = retinaBadge.length();
+		try {
+			assertIsPng(retinaBadge.toPath());
+			assertTrue(retinaSize > pngSize);
+		} finally {
+			retinaBadge.delete();
+		}
+
+		String uid = new BigInteger(128, new Random()).toString(36);
+		File svgBadge = projectApi.getPublicProjectStatusBadge(
+				TEST_BADGE_PROVIDER, TEST_BADGE_ACCOUNT, TEST_BADGE_SLUG, null,
+				true, false, uid, uid, uid);
+		assertTrue(svgBadge.exists());
+		try {
+			assertIsSvg(svgBadge.toPath());
+
+			String svgBadgeText = new String(
+					Files.readAllBytes(svgBadge.toPath()));
+			assertTrue(svgBadgeText.contains(uid));
+		} finally {
+			svgBadge.delete();
+		}
+
+		String branchUid = new BigInteger(128, new Random()).toString(36);
+		File svgBranchBadge = projectApi.getPublicProjectStatusBadge(
+				TEST_BADGE_PROVIDER, TEST_BADGE_ACCOUNT, TEST_BADGE_SLUG,
+				"master", true, false, branchUid, branchUid, branchUid);
+		assertTrue(svgBranchBadge.exists());
+		try {
+			assertIsSvg(svgBranchBadge.toPath());
+
+			String svgBranchBadgeText = new String(
+					Files.readAllBytes(svgBranchBadge.toPath()));
+			assertTrue(svgBranchBadgeText.contains(branchUid));
+		} finally {
+			svgBranchBadge.delete();
+		}
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
