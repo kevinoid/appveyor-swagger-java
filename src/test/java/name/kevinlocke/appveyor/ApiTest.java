@@ -630,16 +630,11 @@ public class ApiTest {
 				testProjectYaml.getBytes());
 	}
 
-	// Canceled builds do not show up in all queries, so it does not make a
-	// good testBuild for the other tests. So it is run first separately.
-	// Uncomment after https://github.com/cbeust/testng/pull/1158
-	@Test(dependsOnMethods = "addProject", groups = "project" /*
-																 * , priority =
-																 * -2
-																 */)
+	// Note: Does not depend on startBuild since it creates a separate build
+	// to avoid interfering with testBuild (cancelled builds do not show
+	// up in all queries).
+	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void cancelBuild() throws ApiException {
-		// Create a new build to cancel, since cancelled builds do not show
-		// up in all queries, it would not be good for testBuild to be cancelled
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		BuildStartRequest buildStart = new BuildStartRequest()
@@ -655,10 +650,9 @@ public class ApiTest {
 				|| cancelledBuildStatus == Status.CANCELLING);
 	}
 
-	// Make sure this is run after the cancelled build is done so the test
-	// build gets assigned TEST_PROJECT_BUILD_NUMBER set here.
-	// Note: cancelBuild can be removed from dependsOnMethods once TestNG with
-	// https://github.com/cbeust/testng/pull/1158 is released
+	// Depends on cancelBuild so that the build number will be set after the
+	// cancelled build is started. That way there is no chance of the build
+	// number being used by cancelBuild instead of startBuild.
 	@Test(dependsOnMethods = { "cancelBuild",
 			"updateProject" }, groups = "project")
 	public void updateProjectBuildNumber() throws ApiException {
@@ -669,10 +663,7 @@ public class ApiTest {
 		projectApi.updateProjectBuildNumber(accountName, slug, pbnu);
 	}
 
-	// Set priority < 0 so build is started early and can run in background
-	// Uncomment after https://github.com/cbeust/testng/pull/1158
-	@Test(dependsOnMethods = "updateProjectBuildNumber", groups = "project"
-	/* , priority = -1 */)
+	@Test(dependsOnMethods = "updateProjectBuildNumber", groups = "project")
 	public void startBuild() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -687,12 +678,7 @@ public class ApiTest {
 	}
 
 	// This is not really a test, but is used for synchronization by other tests
-	// Set priority > 0 so build can run during default priority tests
-	// Uncomment after https://github.com/cbeust/testng/pull/1158
-	@Test(dependsOnMethods = "startBuild", groups = "project" /*
-																 * , priority =
-																 * 1
-																 */)
+	@Test(dependsOnMethods = "startBuild", groups = "project")
 	public void waitForBuild() throws ApiException, InterruptedException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
