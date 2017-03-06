@@ -561,7 +561,29 @@ public class ApiTest {
 		assertEquals(namedProject.getRepositoryName(), TEST_PROJECT_REPO_NAME);
 	}
 
+	// Note: Does not depend on startBuild since it creates a separate build
+	// to avoid interfering with testBuild (cancelled builds do not show
+	// up in all queries).
 	@Test(dependsOnMethods = "addProject", groups = "project")
+	public void cancelBuild() throws ApiException {
+		String accountName = testProject.getAccountName();
+		String slug = testProject.getSlug();
+		BuildStartRequest buildStart = new BuildStartRequest()
+				.accountName(accountName).projectSlug(slug);
+		Build cancelBuild = buildApi.startBuild(buildStart);
+		String version = cancelBuild.getVersion();
+		buildApi.cancelBuild(accountName, slug, version);
+		ProjectBuildResults cancelledBuildProject = projectApi
+				.getProjectBuildByVersion(accountName, slug, version);
+		Build cancelledBuild = cancelledBuildProject.getBuild();
+		Status cancelledBuildStatus = cancelledBuild.getStatus();
+		assertTrue(cancelledBuildStatus == Status.CANCELLED
+				|| cancelledBuildStatus == Status.CANCELLING);
+	}
+
+	// Note: Depend on cancelBuild since build settings appear to be
+	// initialized/loaded/reset when the project is first built.
+	@Test(dependsOnMethods = "cancelBuild", groups = "project")
 	public void getProjectSettings() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -582,7 +604,9 @@ public class ApiTest {
 		assertEquals(gotProject.getSlug(), slug);
 	}
 
-	@Test(dependsOnMethods = "addProject", groups = "project")
+	// Note: Depend on cancelBuild since build settings appear to be
+	// initialized/loaded/reset when the project is first built.
+	@Test(dependsOnMethods = "cancelBuild", groups = "project")
 	public void getProjectSettingsYaml() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -629,26 +653,6 @@ public class ApiTest {
 		String slug = testProject.getSlug();
 		projectApi.updateProjectSettingsYaml(accountName, slug,
 				testProjectYaml.getBytes());
-	}
-
-	// Note: Does not depend on startBuild since it creates a separate build
-	// to avoid interfering with testBuild (cancelled builds do not show
-	// up in all queries).
-	@Test(dependsOnMethods = "addProject", groups = "project")
-	public void cancelBuild() throws ApiException {
-		String accountName = testProject.getAccountName();
-		String slug = testProject.getSlug();
-		BuildStartRequest buildStart = new BuildStartRequest()
-				.accountName(accountName).projectSlug(slug);
-		Build cancelBuild = buildApi.startBuild(buildStart);
-		String version = cancelBuild.getVersion();
-		buildApi.cancelBuild(accountName, slug, version);
-		ProjectBuildResults cancelledBuildProject = projectApi
-				.getProjectBuildByVersion(accountName, slug, version);
-		Build cancelledBuild = cancelledBuildProject.getBuild();
-		Status cancelledBuildStatus = cancelledBuild.getStatus();
-		assertTrue(cancelledBuildStatus == Status.CANCELLED
-				|| cancelledBuildStatus == Status.CANCELLING);
 	}
 
 	// Depends on cancelBuild so that the build number will be set after the
