@@ -816,7 +816,12 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void successfulBuild() {
-		assertEquals(testBuild.getStatus(), Status.SUCCESS);
+		Status status = testBuild.getStatus();
+		if (status != Status.SUCCESS) {
+			throw new AssertionError(String.format(
+					"Build status %s != %s.  Check getBuildLog output.", status,
+					Status.SUCCESS));
+		}
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
