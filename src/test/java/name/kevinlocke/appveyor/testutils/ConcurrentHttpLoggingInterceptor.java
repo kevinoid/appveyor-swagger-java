@@ -123,9 +123,15 @@ public final class ConcurrentHttpLoggingInterceptor implements Interceptor {
 			Headers headers = request.headers();
 			for (int i = 0, count = headers.size(); i < count; i++) {
 				String name = headers.name(i);
+				if ("Authorization".equalsIgnoreCase(name)
+						|| "Proxy-Authenticate".equalsIgnoreCase(name)
+						|| "Proxy-Authorization".equalsIgnoreCase(name)
+						|| "WWW-Authenticate".equalsIgnoreCase(name)) {
+					requestMessage.append(name).append(": *****\n");
+				}
 				// Skip headers from the request body as they are explicitly
 				// logged above.
-				if (!"Content-Type".equalsIgnoreCase(name)
+				else if (!"Content-Type".equalsIgnoreCase(name)
 						&& !"Content-Length".equalsIgnoreCase(name)) {
 					requestMessage.append(name).append(": ")
 							.append(headers.value(i)).append('\n');
