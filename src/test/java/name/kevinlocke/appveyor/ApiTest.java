@@ -39,19 +39,21 @@ import name.kevinlocke.appveyor.model.CollaboratorUpdate;
 import name.kevinlocke.appveyor.model.Deployment;
 import name.kevinlocke.appveyor.model.DeploymentEnvironment;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentAddition;
-import name.kevinlocke.appveyor.model.DeploymentEnvironmentDeployment;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentDeploymentsResults;
+import name.kevinlocke.appveyor.model.DeploymentEnvironmentLookupModel;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentSettings;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentSettingsResults;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentWithSettings;
 import name.kevinlocke.appveyor.model.DeploymentProviderType;
 import name.kevinlocke.appveyor.model.DeploymentStartRequest;
+import name.kevinlocke.appveyor.model.EnvironmentDeploymentModel;
 import name.kevinlocke.appveyor.model.Project;
 import name.kevinlocke.appveyor.model.ProjectAddition;
 import name.kevinlocke.appveyor.model.ProjectBuildNumberUpdate;
 import name.kevinlocke.appveyor.model.ProjectBuildResults;
 import name.kevinlocke.appveyor.model.ProjectConfiguration;
 import name.kevinlocke.appveyor.model.ProjectDeployment;
+import name.kevinlocke.appveyor.model.ProjectDeploymentModel;
 import name.kevinlocke.appveyor.model.ProjectDeploymentsResults;
 import name.kevinlocke.appveyor.model.ProjectHistory;
 import name.kevinlocke.appveyor.model.ProjectSettingsResults;
@@ -439,7 +441,7 @@ public class ApiTest {
 	}
 
 	public void cleanupOldTestEnvironments() throws ApiException {
-		for (DeploymentEnvironment environment : environmentApi
+		for (DeploymentEnvironmentLookupModel environment : environmentApi
 				.getEnvironments()) {
 			if (environment.getName().equals(TEST_ENVIRONMENT_NAME)) {
 				environmentApi.deleteEnvironment(
@@ -469,9 +471,9 @@ public class ApiTest {
 		assertEquals(environment.getName(), TEST_ENVIRONMENT_NAME);
 	}
 
-	protected DeploymentEnvironment getEnvironmentByName(String name)
+	protected DeploymentEnvironmentLookupModel getEnvironmentByName(String name)
 			throws ApiException {
-		for (DeploymentEnvironment environment : environmentApi
+		for (DeploymentEnvironmentLookupModel environment : environmentApi
 				.getEnvironments()) {
 			if (environment.getName().equals(name)) {
 				return environment;
@@ -483,13 +485,12 @@ public class ApiTest {
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
 	public void getEnvironments() throws ApiException {
 		DeploymentEnvironmentWithSettings environment = testEnvironment;
-		DeploymentEnvironment namedEnvironment = getEnvironmentByName(
+		DeploymentEnvironmentLookupModel namedEnvironment = getEnvironmentByName(
 				environment.getName());
 		assertEquals(namedEnvironment.getDeploymentEnvironmentId(),
 				environment.getDeploymentEnvironmentId());
-		assertEquals(namedEnvironment.getAccountId(),
-				environment.getAccountId());
 		assertEquals(namedEnvironment.getName(), environment.getName());
+		assertEquals(namedEnvironment.getProvider(), environment.getProvider());
 	}
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
@@ -916,16 +917,19 @@ public class ApiTest {
 		Integer testEnvId = testEnvironment.getDeploymentEnvironmentId();
 		DeploymentEnvironmentDeploymentsResults envDeps = environmentApi
 				.getEnvironmentDeployments(testEnvId);
-		assertEquals(envDeps.getEnvironment().getDeploymentEnvironmentId(),
-				testEnvId);
-		ProjectDeployment projectDeployment = envDeps.getDeployments().get(0);
-		Project project = projectDeployment.getProject();
-		assertEquals(project.getProjectId(), testProject.getProjectId());
-		DeploymentEnvironment environment = envDeps.getEnvironment();
-		assertEquals(environment.getDeploymentEnvironmentId(), testEnvId);
-		Deployment deployment = projectDeployment.getDeployment();
+
+		List<EnvironmentDeploymentModel> deployments = envDeps.getDeployments();
+		assertEquals(deployments.size(), 1);
+		EnvironmentDeploymentModel deployment = deployments.get(0);
+		// TODO: Assert property equality
 		assertEquals(deployment.getDeploymentId(),
 				testDeployment.getDeploymentId());
+		assertEquals(deployment.getBuild().getBuildId(),
+				testBuild.getBuildId());
+		assertEquals(deployment.getProject().getProjectId(),
+				testProject.getProjectId());
+		assertEquals(envDeps.getEnvironment().getDeploymentEnvironmentId(),
+				testEnvironment.getDeploymentEnvironmentId());
 	}
 
 	@Test(dependsOnMethods = "waitForDeployment", groups = { "environment",
@@ -938,16 +942,16 @@ public class ApiTest {
 		Project project = projectDeployments.getProject();
 		assertEquals(project.getAccountName(), accountName);
 		assertEquals(project.getSlug(), slug);
-		List<DeploymentEnvironmentDeployment> environmentDeployments = projectDeployments
+		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
 				.getDeployments();
-		DeploymentEnvironmentDeployment environmentDeployment = environmentDeployments
+		assertEquals(environmentDeployments.size(), 1);
+		ProjectDeploymentModel environmentDeployment = environmentDeployments
 				.get(0);
-		DeploymentEnvironment environment = environmentDeployment
+		DeploymentEnvironmentLookupModel environment = environmentDeployment
 				.getEnvironment();
 		assertEquals(environment.getDeploymentEnvironmentId(),
 				testEnvironment.getDeploymentEnvironmentId());
-		Deployment deployment = environmentDeployment.getDeployment();
-		assertEquals(deployment.getDeploymentId(),
+		assertEquals(environmentDeployment.getDeploymentId(),
 				testDeployment.getDeploymentId());
 	}
 
