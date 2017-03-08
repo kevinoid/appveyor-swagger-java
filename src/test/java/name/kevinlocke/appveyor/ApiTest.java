@@ -89,6 +89,7 @@ import name.kevinlocke.appveyor.model.TestMode;
 import name.kevinlocke.appveyor.model.UserAccount;
 import name.kevinlocke.appveyor.model.UserAccountRolesResults;
 import name.kevinlocke.appveyor.model.UserAddition;
+import name.kevinlocke.appveyor.testutils.Resources;
 import name.kevinlocke.appveyor.testutils.TestApiClient;
 import name.kevinlocke.appveyor.testutils.json.FieldNameExclusionStrategy;
 
@@ -114,12 +115,14 @@ public class ApiTest {
 	public static final String TEST_ENCRYPT_VALUE = "encryptme";
 	public static final String TEST_ENVIRONMENT_NAME = "Test Env";
 	public static final Integer TEST_PROJECT_BUILD_NUMBER = 45;
-	public static final String TEST_PROJECT_BUILD_SCRIPT = "echo Build";
+	public static final String TEST_PROJECT_BUILD_SCRIPT = Resources
+			.getAsString("/buildscript.ps1");
 	public static final String TEST_PROJECT_BRANCH = "master";
 	// Note: Using GitHub provider requires GitHub auth to AppVeyor test user
 	public static final RepositoryProvider TEST_PROJECT_REPO_PROVIDER = RepositoryProvider.GIT;
 	public static final String TEST_PROJECT_REPO_NAME = "https://github.com/kevinoid/empty.git";
-	public static final String TEST_PROJECT_TEST_SCRIPT = "echo Test";
+	public static final String TEST_PROJECT_TEST_SCRIPT = Resources
+			.getAsString("/testscript.ps1");
 	public static final String TEST_ROLE_NAME = "Test Role";
 	public static final String TEST_USER_EMAIL = "bob2@example.com";
 	public static final String TEST_USER_NAME = "Test User";
@@ -768,11 +771,11 @@ public class ApiTest {
 		ProjectConfiguration config = projectConfig.getConfiguration();
 		config.setBuildMode(BuildMode.SCRIPT);
 		config.setBuildScripts(
-				Arrays.asList(new Script().language(ScriptLanguage.CMD)
+				Arrays.asList(new Script().language(ScriptLanguage.PS)
 						.script(TEST_PROJECT_BUILD_SCRIPT)));
 		config.setTestMode(TestMode.SCRIPT);
 		config.setTestScripts(
-				Arrays.asList(new Script().language(ScriptLanguage.CMD)
+				Arrays.asList(new Script().language(ScriptLanguage.PS)
 						.script(TEST_PROJECT_TEST_SCRIPT)));
 		projectApi.updateProject(projectConfig);
 
