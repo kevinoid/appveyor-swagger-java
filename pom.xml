@@ -238,7 +238,7 @@
             </property>
           </properties>
           <suiteXmlFiles>
-            <suiteXmlFile>${basedir}/src/test/java/testng.xml</suiteXmlFile>
+            <suiteXmlFile>${basedir}/src/test/resources/testng.xml</suiteXmlFile>
           </suiteXmlFiles>
         </configuration>
       </plugin>
