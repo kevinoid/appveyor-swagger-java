@@ -30,6 +30,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
@@ -59,6 +60,7 @@ import name.kevinlocke.appveyor.model.DeploymentEnvironmentSettingsResults;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentWithSettings;
 import name.kevinlocke.appveyor.model.DeploymentProviderType;
 import name.kevinlocke.appveyor.model.DeploymentStartRequest;
+import name.kevinlocke.appveyor.model.EncryptRequest;
 import name.kevinlocke.appveyor.model.EnvironmentDeploymentModel;
 import name.kevinlocke.appveyor.model.NuGetFeed;
 import name.kevinlocke.appveyor.model.Project;
@@ -109,6 +111,7 @@ public class ApiTest {
 	// Must exist and can not be created by the account used for testing
 	public static final String TEST_COLLABORATOR_EMAIL = "kevin@kevinlocke.name";
 	public static final String TEST_COLLABORATOR_ROLE_NAME = "User";
+	public static final String TEST_ENCRYPT_VALUE = "encryptme";
 	public static final String TEST_ENVIRONMENT_NAME = "Test Env";
 	public static final Integer TEST_PROJECT_BUILD_NUMBER = 45;
 	public static final String TEST_PROJECT_BUILD_SCRIPT = "echo Build";
@@ -654,6 +657,16 @@ public class ApiTest {
 						project.getSlug());
 			}
 		}
+	}
+
+	@Test(groups = "project")
+	public void encryptValue() throws ApiException {
+		EncryptRequest encryptReq = new EncryptRequest();
+		encryptReq.setPlainValue(TEST_ENCRYPT_VALUE);
+		String encrypted = projectApi.encryptValue(encryptReq);
+		// This isn't an API guarantee, just a sanity check
+		assertTrue(Pattern.matches("^[A-Za-z0-9/+]+={0,2}$", encrypted),
+				encrypted + " is base64-encoded string");
 	}
 
 	@Test(groups = "project")
