@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
@@ -131,7 +132,8 @@ public class ApiTest {
 	protected final RoleApi roleApi;
 	protected final UserApi userApi;
 
-	private volatile Map<String, Role> systemRolesByName = null;
+	private final ReentrantLock systemRolesLock = new ReentrantLock();
+	private volatile Map<String, Role> systemRolesByName;
 
 	protected volatile Build testBuild;
 	protected volatile UserAccount testCollaborator;
@@ -207,38 +209,60 @@ public class ApiTest {
 		assertSameRole(gotRole, testRole);
 	}
 
-	protected synchronized Role getRoleByName(String roleName)
-			throws ApiException {
-		Map<String, Role> rolesByName = systemRolesByName;
-		if (rolesByName != null) {
-			Role namedRole = rolesByName.get(roleName);
-			if (namedRole != null) {
-				return namedRole;
+	/** Gets Roles and caches (immutable) system roles if not yet cached. */
+	protected List<Role> getRolesInternal() throws ApiException {
+		// If the system roles haven't been cached yet, do the caching.
+		//
+		// Note: The lock must be held before the API call so that calls to
+		// getSystemRoleByName while roleApi.getRoles() is in progress do not
+		// cause a second (unnecessary) API call.
+		if (systemRolesByName == null) {
+			// Note: tryLock() so non-system calls do not block unnecessarily
+			if (systemRolesLock.tryLock()) {
+				try {
+					if (systemRolesByName == null) {
+						List<Role> roles = roleApi.getRoles();
+						Map<String, Role> newSystemRolesByName = new HashMap<>(
+								roles.size());
+						for (Role role : roles) {
+							if (role.getIsSystem()) {
+								newSystemRolesByName.put(role.getName(), role);
+							}
+						}
+						systemRolesByName = newSystemRolesByName;
+						return roles;
+					}
+				} finally {
+					systemRolesLock.unlock();
+				}
 			}
 		}
 
-		List<Role> roles = roleApi.getRoles();
+		return roleApi.getRoles();
+	}
 
-		if (rolesByName == null) {
-			rolesByName = new HashMap<String, Role>(roles.size());
-			for (Role role : roles) {
-				if (role.getIsSystem()) {
-					rolesByName.put(role.getName(), role);
-				}
-			}
-			synchronized (this) {
-				if (systemRolesByName == null) {
-					systemRolesByName = rolesByName;
-				}
-			}
-		}
-
-		for (Role role : roles) {
+	protected Role getRoleByName(String roleName) throws ApiException {
+		for (Role role : getRolesInternal()) {
 			if (role.getName().equals(roleName)) {
 				return role;
 			}
 		}
 		return null;
+	}
+
+	protected Role getSystemRoleByName(String roleName) throws ApiException {
+		if (systemRolesByName == null) {
+			systemRolesLock.lock();
+			try {
+				if (systemRolesByName == null) {
+					getRolesInternal();
+				}
+			} finally {
+				systemRolesLock.unlock();
+			}
+		}
+
+		return systemRolesByName.get(roleName);
 	}
 
 	@Test(dependsOnMethods = "addRole", groups = "role")
@@ -298,7 +322,7 @@ public class ApiTest {
 		UserAddition userAddition = new UserAddition();
 		userAddition.setFullName(TEST_USER_NAME);
 		userAddition.setEmail(TEST_USER_EMAIL);
-		Role role = getRoleByName(TEST_USER_ROLE_NAME);
+		Role role = getSystemRoleByName(TEST_USER_ROLE_NAME);
 		userAddition.setRoleId(role.getRoleId());
 		try {
 			userApi.addUser(userAddition);
@@ -369,7 +393,7 @@ public class ApiTest {
 
 		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
 		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		testCollaboratorRole = getRoleByName(TEST_COLLABORATOR_ROLE_NAME);
+		testCollaboratorRole = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME);
 		collaboratorAddition.setRoleId(testCollaboratorRole.getRoleId());
 
 		try {
