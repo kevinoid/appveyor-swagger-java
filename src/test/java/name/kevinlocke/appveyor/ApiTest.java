@@ -2,6 +2,10 @@ package name.kevinlocke.appveyor;
 
 import static name.kevinlocke.appveyor.testutils.AssertMediaType.assertIsPng;
 import static name.kevinlocke.appveyor.testutils.AssertMediaType.assertIsSvg;
+import static name.kevinlocke.appveyor.testutils.AssertModels.assertModelAgrees;
+import static name.kevinlocke.appveyor.testutils.AssertModels.assertModelAgreesExcluding;
+import static name.kevinlocke.appveyor.testutils.AssertModels.assertModelEquals;
+import static name.kevinlocke.appveyor.testutils.AssertModels.assertModelEqualsExcluding;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
@@ -16,14 +20,21 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
+
+import com.google.gson.ExclusionStrategy;
 
 import name.kevinlocke.appveyor.api.BuildApi;
 import name.kevinlocke.appveyor.api.CollaboratorApi;
@@ -42,12 +53,14 @@ import name.kevinlocke.appveyor.model.DeploymentEnvironment;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentAddition;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentDeploymentsResults;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentLookupModel;
+import name.kevinlocke.appveyor.model.DeploymentEnvironmentProject;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentSettings;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentSettingsResults;
 import name.kevinlocke.appveyor.model.DeploymentEnvironmentWithSettings;
 import name.kevinlocke.appveyor.model.DeploymentProviderType;
 import name.kevinlocke.appveyor.model.DeploymentStartRequest;
 import name.kevinlocke.appveyor.model.EnvironmentDeploymentModel;
+import name.kevinlocke.appveyor.model.NuGetFeed;
 import name.kevinlocke.appveyor.model.Project;
 import name.kevinlocke.appveyor.model.ProjectAddition;
 import name.kevinlocke.appveyor.model.ProjectBuildNumberUpdate;
@@ -61,10 +74,12 @@ import name.kevinlocke.appveyor.model.ProjectSettingsResults;
 import name.kevinlocke.appveyor.model.ProjectWithConfiguration;
 import name.kevinlocke.appveyor.model.RepositoryProvider;
 import name.kevinlocke.appveyor.model.Role;
+import name.kevinlocke.appveyor.model.RoleAce;
 import name.kevinlocke.appveyor.model.RoleAddition;
 import name.kevinlocke.appveyor.model.RoleWithGroups;
 import name.kevinlocke.appveyor.model.Script;
 import name.kevinlocke.appveyor.model.ScriptLanguage;
+import name.kevinlocke.appveyor.model.SecurityDescriptor;
 import name.kevinlocke.appveyor.model.Status;
 import name.kevinlocke.appveyor.model.StoredNameValue;
 import name.kevinlocke.appveyor.model.StoredValue;
@@ -73,6 +88,7 @@ import name.kevinlocke.appveyor.model.UserAccount;
 import name.kevinlocke.appveyor.model.UserAccountRolesResults;
 import name.kevinlocke.appveyor.model.UserAddition;
 import name.kevinlocke.appveyor.testutils.TestApiClient;
+import name.kevinlocke.appveyor.testutils.json.FieldNameExclusionStrategy;
 
 /**
  * Tests for the AppVeyor API client.
@@ -106,22 +122,15 @@ public class ApiTest {
 	public static final String TEST_USER_NAME = "Test User";
 	public static final String TEST_USER_ROLE_NAME = "User";
 
-	/** Assert that two roles are the same, excluding mutable fields. */
-	public static void assertSameRole(RoleWithGroups actual,
-			RoleWithGroups expected) {
-		assertEquals(actual.getRoleId(), expected.getRoleId());
-		assertEquals(actual.getName(), expected.getName());
-		assertEquals(actual.getIsSystem(), expected.getIsSystem());
-		assertEquals(actual.getCreated(), expected.getCreated());
-	}
-
-	/** Assert that two roles are the same, excluding mutable fields. */
-	public static void assertSameRole(Role actual, RoleWithGroups expected) {
-		assertEquals(actual.getRoleId(), expected.getRoleId());
-		assertEquals(actual.getName(), expected.getName());
-		assertEquals(actual.getIsSystem(), expected.getIsSystem());
-		assertEquals(actual.getCreated(), expected.getCreated());
-	}
+	// Exclude updated field due to change on update operation
+	private static final ExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
+			"updated");
+	// Exclude nuGetFeed, repositoryBranch, securityDescriptor when comparing
+	// Project results from endpoints which don't include these
+	// Exclude builds and updated which change as the result of other tests
+	private static final ExclusionStrategy projectExcludes = new FieldNameExclusionStrategy(
+			"builds", "nuGetFeed", "repositoryBranch", "securityDescriptor",
+			"updated");
 
 	protected final ApiClient apiClient;
 	protected final BuildApi buildApi;
@@ -155,6 +164,58 @@ public class ApiTest {
 		projectApi = new ProjectApi(apiClient);
 		roleApi = new RoleApi(apiClient);
 		userApi = new UserApi(apiClient);
+	}
+
+	/**
+	 * "Normalizes" a SecurityDescriptor to only include system roles, to make
+	 * it consistent regardless of which roles exist.
+	 */
+	protected void normalizeSecurity(SecurityDescriptor securityDescriptor)
+			throws ApiException {
+		Iterator<RoleAce> roleAcesIter = securityDescriptor.getRoleAces()
+				.iterator();
+		while (roleAcesIter.hasNext()) {
+			RoleAce roleAce = roleAcesIter.next();
+			if (getSystemRoleByName(roleAce.getName()) == null) {
+				roleAcesIter.remove();
+			}
+		}
+	}
+
+	/**
+	 * "Normalizes" the SecurityDescriptor to only include system roles, to make
+	 * it consistent regardless of which roles exist.
+	 */
+	protected void normalizeSecurity(
+			DeploymentEnvironment deploymentEnvironment) throws ApiException {
+		normalizeSecurity(deploymentEnvironment.getSecurityDescriptor());
+	}
+
+	/**
+	 * "Normalizes" the SecurityDescriptor to only include system roles, to make
+	 * it consistent regardless of which roles exist.
+	 */
+	protected void normalizeSecurity(
+			DeploymentEnvironmentWithSettings deploymentEnvironment)
+			throws ApiException {
+		normalizeSecurity(deploymentEnvironment.getSecurityDescriptor());
+	}
+
+	/**
+	 * "Normalizes" the SecurityDescriptor to only include system roles, to make
+	 * it consistent regardless of which roles exist.
+	 */
+	protected void normalizeSecurity(Project project) throws ApiException {
+		normalizeSecurity(project.getSecurityDescriptor());
+	}
+
+	/**
+	 * "Normalizes" the SecurityDescriptor to only include system roles, to make
+	 * it consistent regardless of which roles exist.
+	 */
+	protected void normalizeSecurity(ProjectWithConfiguration project)
+			throws ApiException {
+		normalizeSecurity(project.getSecurityDescriptor());
 	}
 
 	@AfterGroups(groups = "role", alwaysRun = true)
@@ -206,7 +267,7 @@ public class ApiTest {
 	@Test(dependsOnMethods = "addRole", groups = "role")
 	public void getRole() throws ApiException {
 		RoleWithGroups gotRole = roleApi.getRole(testRole.getRoleId());
-		assertSameRole(gotRole, testRole);
+		assertModelEqualsExcluding(gotRole, testRole, excludeUpdated);
 	}
 
 	/** Gets Roles and caches (immutable) system roles if not yet cached. */
@@ -222,8 +283,7 @@ public class ApiTest {
 				try {
 					if (systemRolesByName == null) {
 						List<Role> roles = roleApi.getRoles();
-						Map<String, Role> newSystemRolesByName = new HashMap<>(
-								roles.size());
+						Map<String, Role> newSystemRolesByName = new TreeMap<>();
 						for (Role role : roles) {
 							if (role.getIsSystem()) {
 								newSystemRolesByName.put(role.getName(), role);
@@ -265,11 +325,37 @@ public class ApiTest {
 		return systemRolesByName.get(roleName);
 	}
 
+	protected Collection<Role> getSystemRoles() throws ApiException {
+		if (systemRolesByName == null) {
+			systemRolesLock.lock();
+			try {
+				if (systemRolesByName == null) {
+					getRolesInternal();
+				}
+			} finally {
+				systemRolesLock.unlock();
+			}
+		}
+
+		return systemRolesByName.values();
+	}
+
+	protected void assertHasSystemRoles(Iterable<Role> roles)
+			throws ApiException {
+		TreeSet<Role> systemRoles = new TreeSet<>(new RoleNameComparator());
+		for (Role role : roles) {
+			if (role.getIsSystem()) {
+				systemRoles.add(role);
+			}
+		}
+		assertModelEquals(systemRoles, getSystemRoles());
+	}
+
 	@Test(dependsOnMethods = "addRole", groups = "role")
 	public void getRoles() throws ApiException {
 		Role testRoleByName = getRoleByName(TEST_ROLE_NAME);
 		assertNotNull(testRoleByName, TEST_ROLE_NAME + " not in list!?");
-		assertSameRole(testRoleByName, testRole);
+		assertModelAgreesExcluding(testRoleByName, testRole, excludeUpdated);
 	}
 
 	@Test(dependsOnMethods = "addRole", groups = "role")
@@ -277,7 +363,7 @@ public class ApiTest {
 		RoleWithGroups updatedRole = roleApi.updateRole(testRole);
 		assertNotNull(updatedRole);
 		assertNotNull(updatedRole.getUpdated());
-		assertSameRole(updatedRole, testRole);
+		assertModelAgreesExcluding(updatedRole, testRole, excludeUpdated);
 	}
 
 	@AfterGroups(groups = "user", alwaysRun = true)
@@ -357,19 +443,20 @@ public class ApiTest {
 		UserAccountRolesResults userRoles = userApi.getUser(testUserId);
 		UserAccount gotUser = userRoles.getUser();
 		assertNotNull(gotUser, "Test user not found");
-		assertEquals(gotUser.getUserId(), testUserId);
-		assertEquals(gotUser.getEmail(), TEST_USER_EMAIL);
-		assertEquals(gotUser.getFullName(), TEST_USER_NAME);
-		assertEquals(gotUser.getAccountId(), testUser.getAccountId());
+		assertModelEqualsExcluding(gotUser, testUser, excludeUpdated);
+		assertHasSystemRoles(userRoles.getRoles());
 	}
 
 	@Test(dependsOnMethods = "getUsers", groups = "user")
 	public void updateUser() throws ApiException {
 		userApi.updateUser(testUser);
 
-		UserAccountRolesResults updatedUserRoles = userApi
+		UserAccountRolesResults updatedUserWithRoles = userApi
 				.getUser(testUser.getUserId());
-		assertNotNull(updatedUserRoles.getUser().getUpdated());
+		UserAccount updatedUser = updatedUserWithRoles.getUser();
+		assertNotNull(updatedUser.getUpdated());
+		assertModelEqualsExcluding(updatedUser, testUser, excludeUpdated);
+		assertHasSystemRoles(updatedUserWithRoles.getRoles());
 	}
 
 	@AfterGroups(groups = "collaborator", alwaysRun = true)
@@ -440,11 +527,15 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "getCollaborators", groups = "collaborator")
 	public void getCollaborator() throws ApiException {
-		UserAccountRolesResults gotCollaborator = collaboratorApi
+		UserAccountRolesResults collaboratorWithRoles = collaboratorApi
 				.getCollaborator(testCollaborator.getUserId());
-		assertNotNull(gotCollaborator, "Test collaborator not found");
-		assertEquals(gotCollaborator.getUser().getUserId(),
-				testCollaborator.getUserId());
+		assertNotNull(collaboratorWithRoles, "Test collaborator not found");
+
+		UserAccount gotCollaborator = collaboratorWithRoles.getUser();
+		assertModelEqualsExcluding(gotCollaborator, testCollaborator,
+				excludeUpdated);
+
+		assertHasSystemRoles(collaboratorWithRoles.getRoles());
 	}
 
 	@Test(dependsOnMethods = "getCollaborators", groups = "collaborator")
@@ -491,6 +582,7 @@ public class ApiTest {
 				.provider(DeploymentProviderType.WEBHOOK).settings(settings);
 		DeploymentEnvironmentWithSettings environment = environmentApi
 				.addEnvironment(environmentAddition);
+		normalizeSecurity(environment);
 		testEnvironment = environment;
 		assertEquals(environment.getName(), TEST_ENVIRONMENT_NAME);
 	}
@@ -508,13 +600,9 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
 	public void getEnvironments() throws ApiException {
-		DeploymentEnvironmentWithSettings environment = testEnvironment;
 		DeploymentEnvironmentLookupModel namedEnvironment = getEnvironmentByName(
-				environment.getName());
-		assertEquals(namedEnvironment.getDeploymentEnvironmentId(),
-				environment.getDeploymentEnvironmentId());
-		assertEquals(namedEnvironment.getName(), environment.getName());
-		assertEquals(namedEnvironment.getProvider(), environment.getProvider());
+				testEnvironment.getName());
+		assertModelAgrees(namedEnvironment, testEnvironment);
 	}
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
@@ -524,7 +612,18 @@ public class ApiTest {
 				.getEnvironmentSettings(testEnvId);
 		DeploymentEnvironmentWithSettings gotEnv = gotEnvSettingsObj
 				.getEnvironment();
-		assertEquals(gotEnv.getDeploymentEnvironmentId(), testEnvId);
+
+		List<DeploymentEnvironmentProject> projects = gotEnv.getProjects();
+		assertNotEquals(projects.size(), 0);
+		DeploymentEnvironmentProject project = projects.get(0);
+		// Assert that project contains expected properties
+		assertNotEquals(project.getName().length(), 0);
+		assertNotEquals((int) project.getProjectId(), 0);
+		assertNotNull(project.getIsSelected());
+
+		gotEnv.setProjects(Collections.emptyList());
+		normalizeSecurity(gotEnv);
+		assertModelEqualsExcluding(gotEnv, testEnvironment, excludeUpdated);
 	}
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
@@ -532,8 +631,8 @@ public class ApiTest {
 		DeploymentEnvironmentWithSettings updatedEnv = environmentApi
 				.updateEnvironment(testEnvironment);
 		assertNotNull(updatedEnv);
-		assertEquals(updatedEnv.getDeploymentEnvironmentId(),
-				testEnvironment.getDeploymentEnvironmentId());
+		normalizeSecurity(updatedEnv);
+		assertModelEqualsExcluding(updatedEnv, testEnvironment, excludeUpdated);
 		assertNotNull(updatedEnv.getUpdated());
 	}
 
@@ -567,22 +666,19 @@ public class ApiTest {
 		assertEquals(project.getRepositoryName(), TEST_PROJECT_REPO_NAME);
 	}
 
-	protected Project getProjectByRepositoryName(String repoName)
-			throws ApiException {
-		for (Project project : projectApi.getProjects()) {
-			if (project.getRepositoryName().equals(TEST_PROJECT_REPO_NAME)) {
-				return project;
-			}
-		}
-		return null;
-	}
-
 	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void getProjects() throws ApiException {
-		Project namedProject = getProjectByRepositoryName(
-				TEST_PROJECT_REPO_NAME);
-		assertNotNull(namedProject);
-		assertEquals(namedProject.getRepositoryName(), TEST_PROJECT_REPO_NAME);
+		int testProjectId = testProject.getProjectId();
+		Project foundProject = null;
+		for (Project project : projectApi.getProjects()) {
+			if (project.getProjectId() == testProjectId) {
+				foundProject = project;
+				break;
+			}
+		}
+		assertNotNull(foundProject);
+
+		assertModelEqualsExcluding(foundProject, testProject, projectExcludes);
 	}
 
 	// Note: Does not depend on startBuild since it creates a separate build
@@ -612,18 +708,30 @@ public class ApiTest {
 		ProjectSettingsResults settings = projectApi
 				.getProjectSettings(accountName, slug);
 		ProjectWithConfiguration projectConfig = settings.getSettings();
+		normalizeSecurity(projectConfig);
 		testProjectConfig = projectConfig;
-		Project project = testProject;
-		assertEquals(projectConfig.getProjectId(), project.getProjectId());
-		assertEquals(projectConfig.getAccountId(), project.getAccountId());
-		assertEquals(projectConfig.getAccountName(), accountName);
-		assertEquals(projectConfig.getSlug(), slug);
+		Project project = settings.getProject();
 
-		Project gotProject = settings.getProject();
-		assertEquals(gotProject.getProjectId(), testProject.getProjectId());
-		assertEquals(gotProject.getAccountId(), testProject.getAccountId());
-		assertEquals(gotProject.getAccountName(), accountName);
-		assertEquals(gotProject.getSlug(), slug);
+		// Check both copies in response agree
+		assertModelAgreesExcluding(projectConfig, project, projectExcludes);
+		// Check each agrees with testProject
+		assertModelAgreesExcluding(projectConfig, testProject, projectExcludes);
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
+
+		assertEquals(projectConfig.getRepositoryBranch(), TEST_PROJECT_BRANCH);
+
+		NuGetFeed nuGetFeed = projectConfig.getNuGetFeed();
+		assertNotNull(nuGetFeed.getAccountId());
+		assertNotNull(nuGetFeed.getCreated());
+		assertNotNull(nuGetFeed.getId());
+		assertNotNull(nuGetFeed.getName());
+		assertNotNull(nuGetFeed.getProjectId());
+		assertNotNull(nuGetFeed.getPublishingEnabled());
+
+		SecurityDescriptor security = projectConfig.getSecurityDescriptor();
+		assertNotNull(security);
+		assertNotEquals(security.getAccessRightDefinitions().size(), 0);
+		assertNotEquals(security.getRoleAces().size(), 0);
 	}
 
 	@Test(dependsOnMethods = "addProject", groups = "project")
@@ -726,6 +834,8 @@ public class ApiTest {
 		Build build = projectBuild.getBuild();
 		testBuild = build;
 		assertNotNull(build.getFinished());
+		Project project = projectBuild.getProject();
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
 	}
 
 	// Note: Will 404 for projects with no build
@@ -858,10 +968,9 @@ public class ApiTest {
 		ProjectBuildResults lastProjectBuild = projectApi
 				.getProjectLastBuild(accountName, slug);
 		Project project = lastProjectBuild.getProject();
-		assertEquals(project.getAccountName(), accountName);
-		assertEquals(project.getSlug(), slug);
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build lastBuild = lastProjectBuild.getBuild();
-		assertEquals(lastBuild.getBuildId(), testBuild.getBuildId());
+		assertModelEquals(lastBuild, testBuild);
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
@@ -872,10 +981,9 @@ public class ApiTest {
 		ProjectBuildResults branchBuild = projectApi
 				.getProjectLastBuildBranch(accountName, slug, branch);
 		Project project = branchBuild.getProject();
-		assertEquals(project.getAccountName(), accountName);
-		assertEquals(project.getSlug(), slug);
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build build = branchBuild.getBuild();
-		assertEquals(build.getBuildId(), testBuild.getBuildId());
+		assertModelEquals(build, testBuild);
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
@@ -886,13 +994,15 @@ public class ApiTest {
 				10, null, null);
 
 		Project project = history.getProject();
-		assertEquals(project.getAccountName(), accountName);
-		assertEquals(project.getSlug(), slug);
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
 
 		List<Build> builds = history.getBuilds();
 		assertNotEquals(builds.size(), 0);
 		Build lastBuild = builds.get(0);
-		assertEquals(lastBuild.getBuildId(), testBuild.getBuildId());
+		assertTrue(lastBuild.getJobs().isEmpty());
+		FieldNameExclusionStrategy excludeJobs = new FieldNameExclusionStrategy(
+				"jobs");
+		assertModelEqualsExcluding(lastBuild, testBuild, excludeJobs);
 	}
 
 	@Test(dependsOnMethods = { "addEnvironment", "addProject",
@@ -907,13 +1017,18 @@ public class ApiTest {
 		deploymentStart.setProjectSlug(slug);
 		deploymentStart.setBuildVersion(testBuild.getVersion());
 		deploymentStart.setBuildJobId(buildJobId);
-		testDeployment = deploymentApi.startDeployment(deploymentStart);
-		Build build = testDeployment.getBuild();
-		assertEquals(build.getBuildId(), testBuild.getBuildId());
-		assertEquals(build.getVersion(), testBuild.getVersion());
-		DeploymentEnvironment environment = testDeployment.getEnvironment();
-		assertEquals(environment.getDeploymentEnvironmentId(),
-				testEnvironment.getDeploymentEnvironmentId());
+		Deployment deployment = deploymentApi.startDeployment(deploymentStart);
+		DeploymentEnvironment environment = deployment.getEnvironment();
+		normalizeSecurity(environment);
+		testDeployment = deployment;
+
+		Build build = deployment.getBuild();
+		assertTrue(build.getJobs().isEmpty());
+		FieldNameExclusionStrategy excludeJobs = new FieldNameExclusionStrategy(
+				"jobs");
+		assertModelEqualsExcluding(build, testBuild, excludeJobs);
+		assertModelAgreesExcluding(environment, testEnvironment,
+				excludeUpdated);
 	}
 
 	// This is not really a test, but is used for synchronization by other tests
@@ -953,15 +1068,8 @@ public class ApiTest {
 		List<EnvironmentDeploymentModel> deployments = envDeps.getDeployments();
 		assertEquals(deployments.size(), 1);
 		EnvironmentDeploymentModel deployment = deployments.get(0);
-		// TODO: Assert property equality
-		assertEquals(deployment.getDeploymentId(),
-				testDeployment.getDeploymentId());
-		assertEquals(deployment.getBuild().getBuildId(),
-				testBuild.getBuildId());
-		assertEquals(deployment.getProject().getProjectId(),
-				testProject.getProjectId());
-		assertEquals(envDeps.getEnvironment().getDeploymentEnvironmentId(),
-				testEnvironment.getDeploymentEnvironmentId());
+		assertModelAgrees(deployment, testDeployment);
+		assertModelAgrees(deployment.getProject(), testProject);
 	}
 
 	@Test(dependsOnMethods = "waitForDeployment", groups = { "environment",
@@ -972,19 +1080,13 @@ public class ApiTest {
 		ProjectDeploymentsResults projectDeployments = projectApi
 				.getProjectDeployments(accountName, slug);
 		Project project = projectDeployments.getProject();
-		assertEquals(project.getAccountName(), accountName);
-		assertEquals(project.getSlug(), slug);
+		assertModelAgreesExcluding(project, testProject, projectExcludes);
 		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
 				.getDeployments();
 		assertEquals(environmentDeployments.size(), 1);
 		ProjectDeploymentModel environmentDeployment = environmentDeployments
 				.get(0);
-		DeploymentEnvironmentLookupModel environment = environmentDeployment
-				.getEnvironment();
-		assertEquals(environment.getDeploymentEnvironmentId(),
-				testEnvironment.getDeploymentEnvironmentId());
-		assertEquals(environmentDeployment.getDeploymentId(),
-				testDeployment.getDeploymentId());
+		assertModelAgrees(environmentDeployment, testDeployment);
 	}
 
 	public static void main(String[] args) throws ApiException {
@@ -995,4 +1097,12 @@ public class ApiTest {
 		apiTest.cleanupOldTestUsers();
 		apiTest.cleanupOldTestRoles();
 	}
+}
+
+class RoleNameComparator implements Comparator<Role> {
+	@Override
+	public int compare(Role role1, Role role2) {
+		return role1.getName().compareTo(role2.getName());
+	}
+
 }
