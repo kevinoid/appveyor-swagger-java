@@ -605,9 +605,7 @@ public class ApiTest {
 				|| cancelledBuildStatus == Status.CANCELLING);
 	}
 
-	// Note: Depend on cancelBuild since build settings appear to be
-	// initialized/loaded/reset when the project is first built.
-	@Test(dependsOnMethods = "cancelBuild", groups = "project")
+	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void getProjectSettings() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -628,16 +626,17 @@ public class ApiTest {
 		assertEquals(gotProject.getSlug(), slug);
 	}
 
-	// Note: Depend on cancelBuild since build settings appear to be
-	// initialized/loaded/reset when the project is first built.
-	@Test(dependsOnMethods = "cancelBuild", groups = "project")
+	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void getProjectSettingsYaml() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		testProjectYaml = projectApi.getProjectSettingsYaml(accountName, slug);
 	}
 
-	@Test(dependsOnMethods = "getProjectSettings", groups = "project")
+	// Run after updateProjectSettingsYaml to ensure build scripts are
+	// configured for startBuild and not reset by the Yaml get/update ordering.
+	@Test(dependsOnMethods = { "getProjectSettings",
+			"updateProjectSettingsYaml" }, groups = "project")
 	public void updateProject() throws ApiException {
 		// Set dummy build/test scripts so build succeeds
 		// Note: appveyor.yml is ignored outside of GitHub unless configured:
