@@ -621,7 +621,9 @@ public class ApiTest {
 		assertNotEquals((int) project.getProjectId(), 0);
 		assertNotNull(project.getIsSelected());
 
-		gotEnv.setProjects(Collections.emptyList());
+		List<DeploymentEnvironmentProject> emptyProjects = Collections
+				.emptyList();
+		gotEnv.setProjects(emptyProjects);
 		normalizeSecurity(gotEnv);
 		assertModelEqualsExcluding(gotEnv, testEnvironment, excludeUpdated);
 	}

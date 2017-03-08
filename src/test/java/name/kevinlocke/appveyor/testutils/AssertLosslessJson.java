@@ -1,13 +1,12 @@
 package name.kevinlocke.appveyor.testutils;
 
 import java.lang.reflect.Type;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
+import java.util.Objects;
+
+import org.joda.time.DateTime;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -23,9 +22,21 @@ import name.kevinlocke.appveyor.JSON;
  * (i.e. that the result can be serialized back to the same JSON).
  */
 public class AssertLosslessJson extends JSON {
+	// Java 8-compatible String.join
+	private static String join(CharSequence delimiter,
+			Iterable<? extends CharSequence> elements) {
+		Objects.requireNonNull(delimiter);
+		Objects.requireNonNull(elements);
+		StringBuilder builder = new StringBuilder();
+		for (CharSequence cs : elements) {
+			builder.append(cs).append(delimiter);
+		}
+		return builder.substring(0, builder.length() - delimiter.length());
+	}
+
 	protected static void jsonEqualsFail(JsonElement expected,
 			JsonElement actual, Deque<String> path) {
-		throw new ComparisonFailure("JSON differs at " + String.join(".", path),
+		throw new ComparisonFailure("JSON differs at " + join(".", path),
 				expected, "==", actual);
 	}
 
@@ -52,19 +63,26 @@ public class AssertLosslessJson extends JSON {
 
 		String expectedValue = expectedPrimitive.getAsString();
 		String actualValue = actualPrimitive.getAsString();
+		/*
+		 * java.time implementation try { OffsetDateTime expectedInstant =
+		 * OffsetDateTime.parse(expectedValue,
+		 * DateTimeFormatter.ISO_OFFSET_DATE_TIME); OffsetDateTime actualInstant
+		 * = OffsetDateTime.parse(actualValue,
+		 * DateTimeFormatter.ISO_OFFSET_DATE_TIME); // Require difference of
+		 * less than 1 millisecond long nanos =
+		 * ChronoUnit.NANOS.between(expectedInstant, actualInstant); return
+		 * Math.abs(nanos) < 1000000; } catch (ArithmeticException e) { //
+		 * Overflow in ChronoUnit.between() return false; } catch
+		 * (DateTimeParseException e) { return false; }
+		 */
 		try {
-			OffsetDateTime expectedInstant = OffsetDateTime.parse(expectedValue,
-					DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-			OffsetDateTime actualInstant = OffsetDateTime.parse(actualValue,
-					DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-			// Require difference of less than 1 millisecond
-			long nanos = ChronoUnit.NANOS.between(expectedInstant,
-					actualInstant);
-			return Math.abs(nanos) < 1000000;
-		} catch (ArithmeticException e) {
-			// Overflow in ChronoUnit.between()
-			return false;
-		} catch (DateTimeParseException e) {
+			DateTime expectedInstant = DateTime.parse(expectedValue);
+			DateTime actualInstant = DateTime.parse(actualValue);
+			// Require difference of at-most 1 millisecond
+			long millis = expectedInstant.getMillis()
+					- actualInstant.getMillis();
+			return Math.abs(millis) <= 1;
+		} catch (IllegalArgumentException e) {
 			return false;
 		}
 	}
