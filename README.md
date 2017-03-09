@@ -1,9 +1,7 @@
 AppVeyor REST API Client (from Swagger, in Java)
 ================================================
 
-[![Build Status: Linux](https://img.shields.io/travis/kevinoid/appveyor-swagger-java.svg?style=flat&amp;label=build+on+linux)](https://travis-ci.org/kevinoid/appveyor-swagger-java)
-[![Build Status: Windows](https://img.shields.io/appveyor/ci/kevinoid/appveyor-swagger-java.svg?style=flat&amp;label=build+on+windows)](https://ci.appveyor.com/project/kevinoid/appveyor-swagger-java)
-[![Coverage](https://img.shields.io/codecov/c/github/kevinoid/appveyor-swagger-java.svg?style=flat)](https://codecov.io/github/kevinoid/appveyor-swagger-java?branch=master)
+[![Build Status](https://ci.appveyor.com/api/projects/status/l7e72uc1hiwycwg0/branch/master?svg=true)](https://ci.appveyor.com/project/kevinoid/appveyor-swagger-java)
 
 [AppVeyor REST API](https://www.appveyor.com/docs/api/) client generated from
 [the unofficial Swagger
