@@ -12,8 +12,8 @@ import java.nio.file.Path;
 /**
  * Assertions for media types.
  */
-public final class AssertMediaType {
-	private static String guessMediaType(InputStream is, Path path)
+public class AssertMediaType {
+	protected static String guessMediaType(InputStream is, Path path)
 			throws IOException {
 		String mediaType = null;
 		if (path != null) {
@@ -28,7 +28,7 @@ public final class AssertMediaType {
 		return mediaType;
 	}
 
-	private static String trimParams(String mediaType) {
+	protected static String trimParams(String mediaType) {
 		if (mediaType == null) {
 			return mediaType;
 		}
@@ -67,7 +67,7 @@ public final class AssertMediaType {
 		}
 	}
 
-	// Prevent instantiation
-	private AssertMediaType() {
+	// Prevent direct instantiation
+	protected AssertMediaType() {
 	}
 }
