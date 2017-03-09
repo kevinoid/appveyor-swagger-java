@@ -176,7 +176,6 @@ public class ApiTest {
 
 	protected volatile Build testBuild;
 	protected volatile UserAccount testCollaborator;
-	protected volatile Role testCollaboratorRole;
 	protected volatile Deployment testDeployment;
 	protected volatile DeploymentEnvironmentWithSettings testEnvironment;
 	protected volatile Project testProject;
@@ -487,8 +486,9 @@ public class ApiTest {
 	public void addCollaborator() throws ApiException {
 		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
 		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		testCollaboratorRole = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME);
-		collaboratorAddition.setRoleId(testCollaboratorRole.getRoleId());
+		int roleId = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME)
+				.getRoleId();
+		collaboratorAddition.setRoleId(roleId);
 
 		try {
 			collaboratorApi.addCollaborator(collaboratorAddition);
@@ -503,10 +503,12 @@ public class ApiTest {
 	}
 
 	@Test(dependsOnMethods = "addCollaborator", groups = "collaborator")
-	public void addCollaboratorDuplicate() {
+	public void addCollaboratorDuplicate() throws ApiException {
 		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
 		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		collaboratorAddition.setRoleId(testCollaboratorRole.getRoleId());
+		int roleId = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME)
+				.getRoleId();
+		collaboratorAddition.setRoleId(roleId);
 		try {
 			collaboratorApi.addCollaborator(collaboratorAddition);
 			fail("Duplicate collaborator added?");
@@ -528,8 +530,14 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addCollaborator", groups = "collaborator")
 	public void getCollaborators() throws ApiException {
-		testCollaborator = getCollaboratorByEmail(TEST_COLLABORATOR_EMAIL);
-		assertNotNull(testCollaborator, "Test collaborator not found");
+		UserAccount collaborator = getCollaboratorByEmail(
+				TEST_COLLABORATOR_EMAIL);
+		assertNotNull(collaborator, "Test collaborator not found");
+		testCollaborator = collaborator;
+		assertEquals(collaborator.getRoleName(), TEST_COLLABORATOR_ROLE_NAME);
+		Integer roleId = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME)
+				.getRoleId();
+		assertEquals(collaborator.getRoleId(), roleId);
 	}
 
 	@Test(dependsOnMethods = "getCollaborators", groups = "collaborator")
