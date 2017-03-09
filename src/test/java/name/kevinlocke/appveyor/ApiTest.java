@@ -393,7 +393,7 @@ public class ApiTest {
 		UserAddition userAddition = new UserAddition();
 		userAddition.setFullName(TEST_USER_NAME);
 		userAddition.setEmail(TEST_USER_EMAIL);
-		Role role = getRoleByName(TEST_USER_ROLE_NAME);
+		Role role = getSystemRoleByName(TEST_USER_ROLE_NAME);
 		userAddition.setRoleId(role.getRoleId());
 
 		try {
