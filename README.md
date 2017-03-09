@@ -5,14 +5,16 @@ AppVeyor REST API Client (from Swagger, in Java)
 [![Build Status: Windows](https://img.shields.io/appveyor/ci/kevinoid/appveyor-swagger-java.svg?style=flat&amp;label=build+on+windows)](https://ci.appveyor.com/project/kevinoid/appveyor-swagger-java)
 [![Coverage](https://img.shields.io/codecov/c/github/kevinoid/appveyor-swagger-java.svg?style=flat)](https://codecov.io/github/kevinoid/appveyor-swagger-java?branch=master)
 
-AppVeyor REST API Client generated from [the unofficial Swagger
+[AppVeyor REST API](https://www.appveyor.com/docs/api/) client generated from
+[the unofficial Swagger
 definition](https://github.com/kevinoid/appveyor-swagger/) in Java.  The
 primary purpose of this project is to serve as a demonstration and test of the
 Swagger definition using the Java language.  It is also suitable for use as a
 library to access the AppVeyor API from languages which run on the JVM.  Users
 should be aware that the generated classes are a bit clunky and the API is
 _likely to change frequently_ as a result of updates to
-[swagger-codegen](https://github.com/swagger-api/swagger-codegen).
+[swagger-codegen](https://github.com/swagger-api/swagger-codegen) or the REST
+API.
 
 ## Introductory Example
 
