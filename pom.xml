@@ -32,10 +32,18 @@
   </developers>
 
   <distributionManagement>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
     <site>
       <id>site</id>
       <url>scm:git:git@github.com:kevinoid/appveyor-swagger-java.git</url>
     </site>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <issueManagement>
@@ -65,6 +73,7 @@
     <gson-version>2.8.0</gson-version>
     <jodatime-version>2.9.7</jodatime-version>
     <jsonassert-version>1.4.0</jsonassert-version>
+    <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
     <maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
     <maven-project-info-reports-plugin-version>2.9</maven-project-info-reports-plugin-version>
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
@@ -72,8 +81,10 @@
     <maven-resources-plugin-version>3.0.2</maven-resources-plugin-version>
     <maven-scm-publish-plugin-version>1.1</maven-scm-publish-plugin-version>
     <maven-site-plugin-version>3.6</maven-site-plugin-version>
+    <maven-source-plugin-version>3.0.1</maven-source-plugin-version>
     <maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
     <migbase64-version>2.2</migbase64-version>
+    <nexus-staging-maven-plugin-version>1.6.8</nexus-staging-maven-plugin-version>
     <okhttp-version>2.7.5</okhttp-version>
     <swagger-annotations-version>1.5.12</swagger-annotations-version>
     <swagger-codegen-maven-plugin-version>2.2.2</swagger-codegen-maven-plugin-version>
@@ -89,6 +100,69 @@
       <properties>
         <site.path>${project.version}</site.path>
       </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>${maven-source-plugin-version}</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven-javadoc-plugin-version}</version>
+            <configuration>
+              <links>
+                <link>https://square.github.io/okhttp/2.x/okhttp/</link>
+                <link>http://www.joda.org/joda-time/apidocs/</link>
+                <link>https://www.javadoc.io/doc/com.google.code.gson/gson/${gson-version}</link>
+                <link>http://docs.swagger.io/swagger-core/apidocs/</link>
+              </links>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg-plugin-version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>${nexus-staging-maven-plugin-version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 
@@ -309,9 +383,11 @@
         <version>${maven-release-plugin-version}</version>
         <configuration>
           <completionGoals>replacer:replace</completionGoals>
+          <goals>deploy</goals>
           <pushChanges>false</pushChanges>
+          <releaseProfiles>release</releaseProfiles>
           <tagNameFormat>v@{project.version}</tagNameFormat>
-          <useReleaseProfile>true</useReleaseProfile>
+          <useReleaseProfile>false</useReleaseProfile>
         </configuration>
       </plugin>
       <plugin>
