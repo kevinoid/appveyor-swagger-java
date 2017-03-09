@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.testng.Reporter;
+
 /**
  * Assertions for media types.
  */
@@ -24,12 +26,18 @@ public class AssertMediaType {
 		String mediaType = null;
 		if (path != null) {
 			mediaType = Files.probeContentType(path);
+			Reporter.log("Files.probeContentType(" + path + "): " + mediaType,
+					4);
 		}
 		if (mediaType == null && is != null) {
 			mediaType = URLConnection.guessContentTypeFromStream(is);
+			Reporter.log("URLConnection.guessContentTypeFromStream(" + path
+					+ "): " + mediaType, 4);
 		}
 		if (mediaType == null && path != null) {
 			mediaType = URLConnection.guessContentTypeFromName(path.toString());
+			Reporter.log("URLConnection.guessContentTypeFromName(" + path
+					+ "): " + mediaType, 4);
 		}
 		return mediaType;
 	}
