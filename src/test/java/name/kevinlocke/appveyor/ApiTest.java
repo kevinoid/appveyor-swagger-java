@@ -127,8 +127,8 @@ public class ApiTest {
 			.toString();
 	public static final String TEST_BADGE_ACCOUNT = "gruntjs";
 	public static final String TEST_BADGE_SLUG = "grunt";
-	// Must exist and can not be created by the account used for testing
-	public static final String TEST_COLLABORATOR_EMAIL = "kevin@kevinlocke.name";
+	// AppVeyor account must exist and be different than APPVEYOR_API_TOKEN acct
+	public static final String TEST_COLLABORATOR_EMAIL = "appveyor-swagger@example.com";
 	public static final String TEST_COLLABORATOR_ROLE_NAME = "User";
 	public static final String TEST_ENCRYPT_VALUE = "encryptme";
 	public static final String TEST_ENVIRONMENT_PREFIX = "Test Env ";
