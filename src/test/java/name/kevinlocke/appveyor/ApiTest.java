@@ -151,6 +151,15 @@ public class ApiTest {
 	public static final String TEST_USER_NAME = TEST_USER_PREFIX + randStr();
 	public static final String TEST_USER_ROLE_NAME = "User";
 
+	// Exclude jobs property of a build for operations which do not return it
+	private static final FieldNameExclusionStrategy buildExcludeJobs = new FieldNameExclusionStrategy(
+			"jobs", "updated");
+	// The message counts are updated asychronously via the Build Worker API.
+	// Messages can be added after the build reaches a final state and are
+	// therefore not reliable enough for comparison in the tests.
+	private static final FieldNameExclusionStrategy buildJobExcludes = new FieldNameExclusionStrategy(
+			"compilationErrorsCount", "compilationMessagesCount",
+			"compilationWarningsCount", "messagesCount", "updated");
 	// Exclude updated field due to change on update operation
 	private static final FieldNameExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
 			"updated");
@@ -989,7 +998,7 @@ public class ApiTest {
 		Project project = lastProjectBuild.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build lastBuild = lastProjectBuild.getBuild();
-		assertModelEquals(lastBuild, testBuild);
+		assertModelEqualsExcluding(lastBuild, testBuild, buildJobExcludes);
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
@@ -1002,7 +1011,7 @@ public class ApiTest {
 		Project project = branchBuild.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build build = branchBuild.getBuild();
-		assertModelEquals(build, testBuild);
+		assertModelEqualsExcluding(build, testBuild, buildJobExcludes);
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
@@ -1018,10 +1027,9 @@ public class ApiTest {
 		List<Build> builds = history.getBuilds();
 		assertNotEquals(builds.size(), 0);
 		Build lastBuild = builds.get(0);
+		// This operation does not include the jobs property
 		assertTrue(lastBuild.getJobs().isEmpty());
-		FieldNameExclusionStrategy excludeJobs = new FieldNameExclusionStrategy(
-				"jobs");
-		assertModelEqualsExcluding(lastBuild, testBuild, excludeJobs);
+		assertModelEqualsExcluding(lastBuild, testBuild, buildExcludeJobs);
 	}
 
 	@Test(dependsOnMethods = { "addEnvironment", "addProject",
@@ -1042,10 +1050,9 @@ public class ApiTest {
 		testDeployment = deployment;
 
 		Build build = deployment.getBuild();
+		// "jobs" property is not returned by this operation
 		assertTrue(build.getJobs().isEmpty());
-		FieldNameExclusionStrategy excludeJobs = new FieldNameExclusionStrategy(
-				"jobs");
-		assertModelEqualsExcluding(build, testBuild, excludeJobs);
+		assertModelEqualsExcluding(build, testBuild, buildExcludeJobs);
 		assertModelAgreesExcluding(environment, testEnvironment,
 				excludeUpdated);
 	}
