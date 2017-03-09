@@ -103,6 +103,9 @@
       <id>release</id>
       <properties>
         <site.path>${project.version}</site.path>
+        <!-- Skip tests during release:perform, not release:prepare
+             https://stackoverflow.com/q/22391347/503410 -->
+        <skipTests>true</skipTests>
       </properties>
       <build>
         <plugins>
