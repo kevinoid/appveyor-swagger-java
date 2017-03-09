@@ -15,6 +15,9 @@ import java.nio.file.Path;
 public class AssertMediaType {
 	protected static String guessMediaType(InputStream is, Path path)
 			throws IOException {
+		// Marking is required for URLConnection.guessContentTypeFromStream
+		assert is.markSupported() : "InputStream must support marking";
+
 		String mediaType = null;
 		if (path != null) {
 			mediaType = Files.probeContentType(path);
