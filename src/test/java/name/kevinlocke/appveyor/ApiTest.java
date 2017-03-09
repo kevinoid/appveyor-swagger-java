@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,7 @@ import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
 
 import com.google.gson.ExclusionStrategy;
+import com.migcomponents.migbase64.Base64;
 
 import name.kevinlocke.appveyor.api.BuildApi;
 import name.kevinlocke.appveyor.api.CollaboratorApi;
@@ -105,6 +107,22 @@ import name.kevinlocke.appveyor.testutils.json.FieldNameExclusionStrategy;
  * class.
  */
 public class ApiTest {
+	/**
+	 * Gets a short random string safe for use in URLs and filenames.
+	 *
+	 * Names for resources created by tests are made unique to avoid collisions
+	 * during concurrent test runs. This is particularly a problem for
+	 * deployment environments where names are not unique and startDeployment
+	 * identifies the environment by name resulting in an unavoidable race.
+	 */
+	protected static final String randStr() {
+		byte[] randBytes = new byte[6];
+		ThreadLocalRandom.current().nextBytes(randBytes);
+		String randStr = Base64.encodeToString(randBytes, false);
+		String randUrlSafe = randStr.replace('+', '-').replace('/', '_');
+		return randUrlSafe;
+	}
+
 	public static final String TEST_BADGE_PROVIDER = RepositoryProvider.GITHUB
 			.toString();
 	public static final String TEST_BADGE_ACCOUNT = "gruntjs";
@@ -113,7 +131,9 @@ public class ApiTest {
 	public static final String TEST_COLLABORATOR_EMAIL = "kevin@kevinlocke.name";
 	public static final String TEST_COLLABORATOR_ROLE_NAME = "User";
 	public static final String TEST_ENCRYPT_VALUE = "encryptme";
-	public static final String TEST_ENVIRONMENT_NAME = "Test Env";
+	public static final String TEST_ENVIRONMENT_PREFIX = "Test Env ";
+	public static final String TEST_ENVIRONMENT_NAME = TEST_ENVIRONMENT_PREFIX
+			+ randStr();
 	public static final Integer TEST_PROJECT_BUILD_NUMBER = 45;
 	public static final String TEST_PROJECT_BUILD_SCRIPT = Resources
 			.getAsString("/buildscript.ps1");
@@ -123,9 +143,13 @@ public class ApiTest {
 	public static final String TEST_PROJECT_REPO_NAME = "https://github.com/kevinoid/empty.git";
 	public static final String TEST_PROJECT_TEST_SCRIPT = Resources
 			.getAsString("/testscript.ps1");
-	public static final String TEST_ROLE_NAME = "Test Role";
-	public static final String TEST_USER_EMAIL = "bob2@example.com";
-	public static final String TEST_USER_NAME = "Test User";
+	public static final String TEST_ROLE_PREFIX = "Test Role ";
+	public static final String TEST_ROLE_NAME = TEST_ROLE_PREFIX + randStr();
+	public static final String TEST_USER_EMAIL_AT_DOMAIN = "@example.com";
+	public static final String TEST_USER_EMAIL = randStr()
+			+ TEST_USER_EMAIL_AT_DOMAIN;
+	public static final String TEST_USER_PREFIX = "Test User ";
+	public static final String TEST_USER_NAME = TEST_USER_PREFIX + randStr();
 	public static final String TEST_USER_ROLE_NAME = "User";
 
 	// Exclude updated field due to change on update operation
@@ -233,28 +257,17 @@ public class ApiTest {
 	}
 
 	public void cleanupOldTestRoles() throws ApiException {
-		Role oldTestRole = getRoleByName(TEST_ROLE_NAME);
-		if (oldTestRole != null) {
-			roleApi.deleteRole(oldTestRole.getRoleId());
+		for (Role role : getRolesInternal()) {
+			if (role.getName().startsWith(TEST_ROLE_PREFIX)) {
+				roleApi.deleteRole(role.getRoleId());
+			}
 		}
 	}
 
 	@Test(groups = "role")
 	public void addRole() throws ApiException {
 		RoleAddition roleAddition = new RoleAddition().name(TEST_ROLE_NAME);
-		RoleWithGroups role;
-		try {
-			role = roleApi.addRole(roleAddition);
-		} catch (ApiException e) {
-			if (e.getResponseBody().indexOf("already exists") >= 0) {
-				// Previous test run didn't clean up after itself, clean & retry
-				cleanupOldTestRoles();
-				role = roleApi.addRole(roleAddition);
-			} else {
-				throw e;
-			}
-		}
-
+		RoleWithGroups role = roleApi.addRole(roleAddition);
 		testRole = role;
 		assertEquals(role.getName(), TEST_ROLE_NAME);
 	}
@@ -382,7 +395,7 @@ public class ApiTest {
 
 	public void cleanupOldTestUsers() throws ApiException {
 		for (UserAccount user : userApi.getUsers()) {
-			if (user.getEmail().equals(TEST_USER_EMAIL)) {
+			if (user.getEmail().endsWith(TEST_USER_EMAIL_AT_DOMAIN)) {
 				userApi.deleteUser(user.getUserId());
 			}
 		}
@@ -395,18 +408,7 @@ public class ApiTest {
 		userAddition.setEmail(TEST_USER_EMAIL);
 		Role role = getSystemRoleByName(TEST_USER_ROLE_NAME);
 		userAddition.setRoleId(role.getRoleId());
-
-		try {
-			userApi.addUser(userAddition);
-		} catch (ApiException e) {
-			if (e.getResponseBody().indexOf("already exists") >= 0) {
-				// Previous test run didn't clean up after itself, clean & retry
-				cleanupOldTestUsers();
-				userApi.addUser(userAddition);
-			} else {
-				throw e;
-			}
-		}
+		userApi.addUser(userAddition);
 	}
 
 	@Test(dependsOnMethods = "addUser", groups = "user")
@@ -563,7 +565,7 @@ public class ApiTest {
 	public void cleanupOldTestEnvironments() throws ApiException {
 		for (DeploymentEnvironmentLookupModel environment : environmentApi
 				.getEnvironments()) {
-			if (environment.getName().equals(TEST_ENVIRONMENT_NAME)) {
+			if (environment.getName().startsWith(TEST_ENVIRONMENT_PREFIX)) {
 				environmentApi.deleteEnvironment(
 						environment.getDeploymentEnvironmentId());
 			}
@@ -572,12 +574,6 @@ public class ApiTest {
 
 	@Test(groups = "environment")
 	public void addEnvironment() throws ApiException {
-		// Environment names do not have to be unique.
-		// This poses a test issue since startDeployment uses the environment
-		// name and we want to be sure it points to the test environment created
-		// here. Remove an old environments with the same name to ensure this.
-		cleanupOldTestEnvironments();
-
 		// Use a Webhook to http://example.com since Webhooks always succeed
 		DeploymentEnvironmentSettings settings = new DeploymentEnvironmentSettings();
 		settings.addProviderSettingsItem(new StoredNameValue().name("url")
