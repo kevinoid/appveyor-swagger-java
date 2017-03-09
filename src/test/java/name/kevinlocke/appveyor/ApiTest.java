@@ -469,6 +469,7 @@ public class ApiTest {
 	public void cleanupTestCollaborator() throws ApiException {
 		if (testCollaborator != null) {
 			collaboratorApi.deleteCollaborator(testCollaborator.getUserId());
+			testCollaborator = null;
 		}
 	}
 
