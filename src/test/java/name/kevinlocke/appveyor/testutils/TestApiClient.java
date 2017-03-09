@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.testng.Reporter;
 
@@ -51,6 +52,11 @@ public final class TestApiClient {
 		testApiClient.setApiKey(apiToken);
 
 		OkHttpClient httpClient = testApiClient.getHttpClient();
+
+		// The API can be very slow under load. Set generous timeout values.
+		httpClient.setConnectTimeout(30, TimeUnit.SECONDS);
+		httpClient.setReadTimeout(2, TimeUnit.MINUTES);
+
 		List<Interceptor> interceptors = httpClient.interceptors();
 
 		String swaggerUrl = TestApiClient.class.getResource("/swagger.yaml")
