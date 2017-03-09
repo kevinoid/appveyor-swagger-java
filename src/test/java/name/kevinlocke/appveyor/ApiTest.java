@@ -661,7 +661,7 @@ public class ApiTest {
 		}
 	}
 
-	@Test(groups = "project")
+	@Test
 	public void encryptValue() throws ApiException {
 		EncryptRequest encryptReq = new EncryptRequest();
 		encryptReq.setPlainValue(TEST_ENCRYPT_VALUE);
