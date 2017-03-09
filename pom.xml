@@ -387,7 +387,12 @@
         <version>${maven-release-plugin-version}</version>
         <configuration>
           <completionGoals>replacer:replace</completionGoals>
-          <goals>deploy</goals>
+          <localCheckout>true</localCheckout>
+          <!-- Can't push changes when not releasing from a branch.  Result:
+               An error is occurred in the checkin process:
+               Exception while executing SCM command.
+               Detecting the current branch failed:
+               fatal: ref HEAD is not a symbolic ref -->
           <pushChanges>false</pushChanges>
           <releaseProfiles>release</releaseProfiles>
           <tagNameFormat>v@{project.version}</tagNameFormat>
