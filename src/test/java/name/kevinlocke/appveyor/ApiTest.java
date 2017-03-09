@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
 
-import com.google.gson.ExclusionStrategy;
 import com.migcomponents.migbase64.Base64;
 
 import name.kevinlocke.appveyor.api.BuildApi;
@@ -153,12 +152,12 @@ public class ApiTest {
 	public static final String TEST_USER_ROLE_NAME = "User";
 
 	// Exclude updated field due to change on update operation
-	private static final ExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
+	private static final FieldNameExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
 			"updated");
 	// Exclude nuGetFeed, repositoryBranch, securityDescriptor when comparing
 	// Project results from endpoints which don't include these
 	// Exclude builds and updated which change as the result of other tests
-	private static final ExclusionStrategy projectExcludes = new FieldNameExclusionStrategy(
+	private static final FieldNameExclusionStrategy projectExcludes = new FieldNameExclusionStrategy(
 			"builds", "nuGetFeed", "repositoryBranch", "securityDescriptor",
 			"updated");
 
