@@ -337,16 +337,6 @@
             </configuration>
           </execution>
         </executions>
-        <!-- Freeze the Swagger version during release. -->
-        <configuration>
-          <file>${basedir}/release-pom.xml</file>
-          <replacements>
-            <replacement>
-              <token><![CDATA[<appveyor-swagger-version>master</appveyor-swagger-version>]]></token>
-              <value><![CDATA[<appveyor-swagger-version>${project.version}</appveyor-swagger-version>]]></value>
-            </replacement>
-          </replacements>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
