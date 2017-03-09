@@ -483,8 +483,6 @@ public class ApiTest {
 
 	@Test(groups = "collaborator")
 	public void addCollaborator() throws ApiException {
-		cleanupTestCollaborator();
-
 		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
 		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
 		testCollaboratorRole = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME);
