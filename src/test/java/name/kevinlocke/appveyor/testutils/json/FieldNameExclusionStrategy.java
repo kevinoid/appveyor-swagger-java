@@ -22,6 +22,10 @@ public class FieldNameExclusionStrategy implements ExclusionStrategy {
 		this.fieldNames = fieldNames;
 	}
 
+	public Collection<String> getFieldNames() {
+		return fieldNames;
+	}
+
 	@Override
 	public boolean shouldSkipField(FieldAttributes f) {
 		return fieldNames.contains(f.getName());
