@@ -769,9 +769,8 @@ public class ApiTest {
 				Arrays.asList(new Script().language(ScriptLanguage.PS)
 						.script(TEST_PROJECT_BUILD_SCRIPT)));
 		config.setTestMode(TestMode.SCRIPT);
-		config.setTestScripts(
-				Arrays.asList(new Script().language(ScriptLanguage.PS)
-						.script(TEST_PROJECT_TEST_SCRIPT)));
+		config.setTestScripts(Arrays.asList(new Script()
+				.language(ScriptLanguage.PS).script(TEST_PROJECT_TEST_SCRIPT)));
 		projectApi.updateProject(projectConfig);
 
 		String accountName = projectConfig.getAccountName();
