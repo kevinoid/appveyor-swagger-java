@@ -870,8 +870,8 @@ public class ApiTest {
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getProjectStatusBadge()
 			throws ApiException, FileNotFoundException, IOException {
-		String webhookId = testProjectConfig.getWebhookId();
-		File pngBadge = projectApi.getProjectStatusBadge(webhookId, false,
+		String statusBadgeId = testProjectConfig.getStatusBadgeId();
+		File pngBadge = projectApi.getProjectStatusBadge(statusBadgeId, false,
 				false, null, null, null);
 		assertTrue(pngBadge.exists());
 		long pngSize = pngBadge.length();
@@ -881,7 +881,8 @@ public class ApiTest {
 			pngBadge.delete();
 		}
 
-		File retinaBadge = projectApi.getProjectStatusBadge(webhookId, false,
+		File retinaBadge = projectApi.getProjectStatusBadge(statusBadgeId,
+				false,
 				true, null, null, null);
 		assertTrue(retinaBadge.exists());
 		long retinaSize = retinaBadge.length();
@@ -894,7 +895,8 @@ public class ApiTest {
 		}
 
 		String uid = new BigInteger(128, new Random()).toString(36);
-		File svgBadge = projectApi.getProjectStatusBadge(webhookId, true, false,
+		File svgBadge = projectApi.getProjectStatusBadge(statusBadgeId, true,
+				false,
 				uid, uid, uid);
 		assertTrue(svgBadge.exists());
 		try {
