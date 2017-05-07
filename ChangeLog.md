@@ -1,4 +1,12 @@
 
+v0.2.1 / 2017-05-07
+===================
+
+  * Updated appveyor-swagger definition.
+    - Add `osType` to `BuildJob` and `BuildWorkerImage`.
+    - Add `rollingBuildsDoNotCancelRunningBuilds` to `Project`.
+    - Better document `scheduleCrontabExpression`.
+
 v0.2.0 / 2017-05-04
 ===================
 
