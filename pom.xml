@@ -68,7 +68,7 @@
 
     <site.path>/</site.path>
 
-    <appveyor-swagger-version>master</appveyor-swagger-version>
+    <appveyor-swagger-version>v0.20170507.0</appveyor-swagger-version>
     <build-helper-maven-plugin-version>1.12</build-helper-maven-plugin-version>
     <bval-version>1.1.2</bval-version>
     <copy-rename-maven-plugin-version>1.0.1</copy-rename-maven-plugin-version>
