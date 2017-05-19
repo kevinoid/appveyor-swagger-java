@@ -3,7 +3,7 @@
 
   <groupId>name.kevinlocke.appveyor</groupId>
   <artifactId>appveyor-swagger</artifactId>
-  <version>0.2.2</version>
+  <version>0.2.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>AppVeyor REST API Client (from Swagger)</name>
@@ -57,7 +57,7 @@
     <url>https://github.com/kevinoid/appveyor-swagger-java</url>
     <connection>scm:git:git://github.com/kevinoid/appveyor-swagger-java.git</connection>
     <developerConnection>scm:git:git@github.com:kevinoid/appveyor-swagger-java.git</developerConnection>
-    <tag>v0.2.2</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
