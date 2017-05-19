@@ -1,4 +1,10 @@
 
+v0.2.2 / 2017-05-18
+===================
+
+  * Updated appveyor-swagger definition.
+    - Add `Ubuntu` to `OSType`, `BuildCloudName`, `BuildWorkerImageName`
+
 v0.2.1 / 2017-05-07
 ===================
 
