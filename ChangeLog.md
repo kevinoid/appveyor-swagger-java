@@ -1,4 +1,10 @@
 
+v0.2.3 / 2017-06-22
+===================
+
+  * Updated appveyor-swagger definition to v0.20170622.0.
+    - Add `Visual Studio 2017 Preview` to `BuildWorkerImageName`
+
 v0.2.2 / 2017-05-18
 ===================
 
