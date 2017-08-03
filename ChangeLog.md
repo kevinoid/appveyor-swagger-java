@@ -1,4 +1,12 @@
 
+v0.2.4 / 2017-08-03
+===================
+
+  * Updated appveyor-swagger definition to v0.20170803.0.
+    - Add `dotnetCsprojFile`, `dotnetCsprojPackageVersionFormat`,
+      `dotnetCsprojVersionFormat`, `hotFixScripts` to `ProjectConfiguration`.
+  * Minor updates for other dependencies.
+
 v0.2.3 / 2017-06-22
 ===================
 
