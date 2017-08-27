@@ -1,4 +1,10 @@
 
+v0.2.5 / 2017-08-27
+===================
+
+  * Updated appveyor-swagger definition to v0.20170827.0.
+    - Add `saveBuildCacheInPullRequests` to `Project`.
+
 v0.2.4 / 2017-08-03
 ===================
 
