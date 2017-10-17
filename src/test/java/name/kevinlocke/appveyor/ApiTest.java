@@ -159,7 +159,8 @@ public class ApiTest {
 	// therefore not reliable enough for comparison in the tests.
 	private static final FieldNameExclusionStrategy buildJobExcludes = new FieldNameExclusionStrategy(
 			"compilationErrorsCount", "compilationMessagesCount",
-			"compilationWarningsCount", "messagesCount", "updated");
+			"compilationWarningsCount", "failedTestsCount", "messagesCount",
+			"passedTestsCount", "testsCount", "updated");
 	// Exclude updated field due to change on update operation
 	private static final FieldNameExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
 			"updated");
