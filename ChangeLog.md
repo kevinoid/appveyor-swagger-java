@@ -1,3 +1,9 @@
+v0.2.6 / 2017-10-19
+===================
+
+  * Updated appveyor-swagger definition to v0.20171019.0.
+    - Add `pro-vs2017` to `BuildCloudName`.
+  * Exclude test counts from build job comparison
 
 v0.2.5 / 2017-08-27
 ===================
