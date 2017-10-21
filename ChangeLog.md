@@ -1,3 +1,11 @@
+v0.2.7 / 2017-10-21
+===================
+
+  * Updated appveyor-swagger definition to v0.20171021.0.
+    - Add `pro-vs2013` to `BuildCloudName`.
+  * Update swagger-request-validator to 1.2.3
+  * Update gson to 2.8.2
+
 v0.2.6 / 2017-10-19
 ===================
 
