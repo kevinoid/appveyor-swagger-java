@@ -1,3 +1,11 @@
+v0.2.8 / 2017-10-23
+===================
+
+  * Updated appveyor-swagger definition to v0.20171023.0.
+    - Add `dotnetCsprojAssemblyVersionFormat` to `ProjectConfiguration`.
+    - Add `dotnetCsprojFileVersionFormat` to `ProjectConfiguration`.
+    - Add `dotnetCsprojInformationalVersionFormat` to `ProjectConfiguration`.
+
 v0.2.7 / 2017-10-21
 ===================
 
