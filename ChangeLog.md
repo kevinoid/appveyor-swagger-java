@@ -1,3 +1,14 @@
+
+v0.2.9 / 2017-10-31
+===================
+
+  * Updated appveyor-swagger definition to v0.20171031.0.
+    - Add `getProjectEnvironmentVariables` operation.
+    - Add `updateProjectEnvironmentVariables` operation.
+  * Test new `ProjectApi.getProjectEnvironmentVariables` operation.
+  * Test new `ProjectApi.updateProjectEnvironmentVariables` operation.
+  * Update swagger-request-validator to 1.3.0
+
 v0.2.8 / 2017-10-23
 ===================
 
