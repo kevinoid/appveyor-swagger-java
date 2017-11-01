@@ -835,6 +835,20 @@ public class ApiTest {
 		assertModelAgrees(envVars, testVars);
 	}
 
+	@Test(dependsOnMethods = "getProjectEnvironmentVariables", groups = "project")
+	public void updateProjectEnvironmentVariables() throws ApiException {
+		String accountName = testProject.getAccountName();
+		String slug = testProject.getSlug();
+		List<StoredNameValue> newVars = Arrays
+				.asList(new StoredNameValue().name("UPDATED").value(
+						new StoredValue().isEncrypted(false).value("value")));
+		projectApi.updateProjectEnvironmentVariables(accountName, slug,
+				newVars);
+		List<StoredNameValue> envVars = projectApi
+				.getProjectEnvironmentVariables(accountName, slug);
+		assertModelAgrees(envVars, newVars);
+	}
+
 	@Test(dependsOnMethods = "getProjectSettingsYaml", groups = "project")
 	public void updateProjectSettingsYaml() throws ApiException {
 		String accountName = testProject.getAccountName();
