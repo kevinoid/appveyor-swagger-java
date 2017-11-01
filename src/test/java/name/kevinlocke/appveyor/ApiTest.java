@@ -781,6 +781,21 @@ public class ApiTest {
 		// https://github.com/appveyor/ci/issues/1089#issuecomment-264549196
 		ProjectWithConfiguration projectConfig = testProjectConfig;
 		ProjectConfiguration config = projectConfig.getConfiguration();
+
+		// Set environment variables for getProjectEnvironmentVariables
+		config.addEnvironmentVariablesItem(new StoredNameValue().name("NULL")
+				.value(new StoredValue().isEncrypted(false)));
+		config.addEnvironmentVariablesItem(new StoredNameValue().name("EMPTY")
+				.value(new StoredValue().isEncrypted(false).value("")));
+		config.addEnvironmentVariablesItem(
+				new StoredNameValue().name("UNTRIMMED").value(
+						new StoredValue().isEncrypted(false).value(" val ")));
+		config.addEnvironmentVariablesItem(new StoredNameValue().name("NUM")
+				.value(new StoredValue().isEncrypted(false).value("1")));
+		config.addEnvironmentVariablesItem(
+				new StoredNameValue().name("ENCRYPTED").value(
+						new StoredValue().isEncrypted(true).value("foo")));
+
 		config.setBuildMode(BuildMode.SCRIPT);
 		config.setBuildScripts(
 				Arrays.asList(new Script().language(ScriptLanguage.PS)
@@ -805,6 +820,19 @@ public class ApiTest {
 		List<Script> testScripts = updatedConfig.getTestScripts();
 		assertEquals(testScripts.size(), 1);
 		assertEquals(testScripts.get(0).getScript(), TEST_PROJECT_TEST_SCRIPT);
+	}
+
+	@Test(dependsOnMethods = "updateProject", groups = "project")
+	public void getProjectEnvironmentVariables() throws ApiException {
+		String accountName = testProject.getAccountName();
+		String slug = testProject.getSlug();
+		List<StoredNameValue> envVars = projectApi
+				.getProjectEnvironmentVariables(accountName, slug);
+
+		List<StoredNameValue> testVars = testProjectConfig.getConfiguration()
+				.getEnvironmentVariables();
+		assertNotEquals(testVars.size(), 0);
+		assertModelAgrees(envVars, testVars);
 	}
 
 	@Test(dependsOnMethods = "getProjectSettingsYaml", groups = "project")
