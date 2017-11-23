@@ -1051,6 +1051,31 @@ public class ApiTest {
 		}
 	}
 
+	@Test(dependsOnMethods = "getBuildArtifacts", groups = "project")
+	public void getProjectArtifact() throws ApiException {
+		String accountName = testProject.getAccountName();
+		String slug = testProject.getSlug();
+		String testName = testArtifact.getFileName();
+		File artifact1 = projectApi.getProjectArtifact(accountName, slug,
+				testName, null, null, null, null, null);
+		assertTrue(artifact1.exists());
+		try {
+			assertNotEquals(artifact1.length(), 0L);
+		} finally {
+			artifact1.delete();
+		}
+
+		String testPath = testArtifactPath.getFileName();
+		File artifact2 = projectApi.getProjectArtifact(accountName, slug,
+				testPath, null, null, null, null, null);
+		assertTrue(artifact2.exists());
+		try {
+			assertNotEquals(artifact2.length(), 0L);
+		} finally {
+			artifact2.delete();
+		}
+	}
+
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getBuildLog()
 			throws ApiException, FileNotFoundException, IOException {
