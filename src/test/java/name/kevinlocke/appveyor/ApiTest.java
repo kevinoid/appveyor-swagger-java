@@ -45,6 +45,7 @@ import name.kevinlocke.appveyor.api.EnvironmentApi;
 import name.kevinlocke.appveyor.api.ProjectApi;
 import name.kevinlocke.appveyor.api.RoleApi;
 import name.kevinlocke.appveyor.api.UserApi;
+import name.kevinlocke.appveyor.model.ArtifactModel;
 import name.kevinlocke.appveyor.model.Build;
 import name.kevinlocke.appveyor.model.BuildMode;
 import name.kevinlocke.appveyor.model.BuildStartRequest;
@@ -183,6 +184,8 @@ public class ApiTest {
 	private final ReentrantLock systemRolesLock = new ReentrantLock();
 	private volatile Map<String, Role> systemRolesByName;
 
+	protected volatile ArtifactModel testArtifact;
+	protected volatile ArtifactModel testArtifactPath;
 	protected volatile Build testBuild;
 	protected volatile UserAccount testCollaborator;
 	protected volatile Deployment testDeployment;
@@ -1008,6 +1011,22 @@ public class ApiTest {
 		} finally {
 			svgBranchBadge.delete();
 		}
+	}
+
+	@Test(dependsOnMethods = "waitForBuild", groups = "project")
+	public void getBuildArtifacts() throws ApiException {
+		String jobId = testBuild.getJobs().get(0).getJobId();
+		List<ArtifactModel> artifacts = buildApi.getBuildArtifacts(jobId);
+		for (ArtifactModel artifact : artifacts) {
+			String fileName = artifact.getFileName();
+			if (fileName.indexOf('/') >= 0) {
+				testArtifactPath = artifact;
+			} else {
+				testArtifact = artifact;
+			}
+		}
+		assertNotNull(testArtifact);
+		assertNotNull(testArtifactPath);
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
