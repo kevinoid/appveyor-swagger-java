@@ -1,3 +1,19 @@
+v0.2.10 / 2017-11-23
+====================
+
+  * Updated appveyor-swagger definition to v0.20171123.0.
+    - Add `getBuildArtifacts` operation and `ArtifactModel` schema for response.
+    - Add `getBuildArtifact` operation.
+    - Add `getProjectArtifact` operation.
+    - Add `tags` property to `DeploymentEnvironment`.
+    - Add `isPrivateProject` property to `NuGetFeed`.
+    - Add enumeration values to `ArtifactType` based on `Push-AppveyorArtifact`
+      cmdlet on build workers.
+    - Remove `name` property requirement from `Artifact`.
+  * Test new `getProjectArtifact` method.
+  * Test new `getBuildArtifact` method.
+  * Test new `getBuildArtifacts` method.
+  * Update swagger-request-validator to 1.3.2.
 
 v0.2.9 / 2017-10-31
 ===================
