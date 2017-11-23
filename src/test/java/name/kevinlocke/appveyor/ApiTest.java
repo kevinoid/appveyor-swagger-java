@@ -1029,6 +1029,28 @@ public class ApiTest {
 		assertNotNull(testArtifactPath);
 	}
 
+	@Test(dependsOnMethods = "getBuildArtifacts", groups = "project")
+	public void getBuildArtifact() throws ApiException {
+		String jobId = testBuild.getJobs().get(0).getJobId();
+		String testName = testArtifact.getFileName();
+		File artifact1 = buildApi.getBuildArtifact(jobId, testName);
+		assertTrue(artifact1.exists());
+		try {
+			assertNotEquals(artifact1.length(), 0L);
+		} finally {
+			artifact1.delete();
+		}
+
+		String testPath = testArtifactPath.getFileName();
+		File artifact2 = buildApi.getBuildArtifact(jobId, testPath);
+		assertTrue(artifact2.exists());
+		try {
+			assertNotEquals(artifact2.length(), 0L);
+		} finally {
+			artifact2.delete();
+		}
+	}
+
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getBuildLog()
 			throws ApiException, FileNotFoundException, IOException {
