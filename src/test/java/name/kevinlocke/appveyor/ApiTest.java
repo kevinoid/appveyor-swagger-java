@@ -1215,7 +1215,7 @@ public class ApiTest {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		ProjectDeploymentsResults projectDeployments = projectApi
-				.getProjectDeployments(accountName, slug);
+				.getProjectDeployments(accountName, slug, 10);
 		Project project = projectDeployments.getProject();
 		assertModelAgreesExcluding(project, testProject, projectExcludes);
 		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
