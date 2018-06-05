@@ -1214,8 +1214,10 @@ public class ApiTest {
 	public void getProjectDeployments() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
+		// Note: On 2018-06-05 started failing for recordsNumber < 11.
+		// Use 12 as the website currently does.
 		ProjectDeploymentsResults projectDeployments = projectApi
-				.getProjectDeployments(accountName, slug, 10);
+				.getProjectDeployments(accountName, slug, 12);
 		Project project = projectDeployments.getProject();
 		assertModelAgreesExcluding(project, testProject, projectExcludes);
 		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
