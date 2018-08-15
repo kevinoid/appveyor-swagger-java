@@ -912,6 +912,16 @@ public class ApiTest {
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 	}
 
+	@Test(dependsOnMethods = "waitForBuild", groups = "project")
+	public void successfulBuild() {
+		Status status = testBuild.getStatus();
+		if (status != Status.SUCCESS) {
+			throw new AssertionError(String.format(
+					"Build status %s != %s.  Check getBuildLog output.", status,
+					Status.SUCCESS));
+		}
+	}
+
 	// Note: Will 404 for projects with no build
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getProjectStatusBadge()
@@ -1013,7 +1023,7 @@ public class ApiTest {
 		}
 	}
 
-	@Test(dependsOnMethods = "waitForBuild", groups = "project")
+	@Test(dependsOnMethods = "successfulBuild", groups = "project")
 	public void getBuildArtifacts() throws ApiException {
 		String jobId = testBuild.getJobs().get(0).getJobId();
 		List<ArtifactModel> artifacts = buildApi.getBuildArtifacts(jobId);
@@ -1087,16 +1097,6 @@ public class ApiTest {
 			assertTrue(buildLogReader.readLine().contains("Build started"));
 		} finally {
 			buildLog.delete();
-		}
-	}
-
-	@Test(dependsOnMethods = "waitForBuild", groups = "project")
-	public void successfulBuild() {
-		Status status = testBuild.getStatus();
-		if (status != Status.SUCCESS) {
-			throw new AssertionError(String.format(
-					"Build status %s != %s.  Check getBuildLog output.", status,
-					Status.SUCCESS));
 		}
 	}
 
