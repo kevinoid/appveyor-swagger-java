@@ -1218,8 +1218,10 @@ public class ApiTest {
 		//       Use 12 as the website currently does.
 		// Note: On 2018-09-03 started failing for recordsNumber == 12.
 		//       Use 10 as the website currently does.
+		// Note: On 2018-09-20 started failing for recordsNumber == 10.
+		//       Use 11 as the website currently does.
 		ProjectDeploymentsResults projectDeployments = projectApi
-				.getProjectDeployments(accountName, slug, 10);
+				.getProjectDeployments(accountName, slug, 11);
 		Project project = projectDeployments.getProject();
 		assertModelAgreesExcluding(project, testProject, projectExcludes);
 		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
