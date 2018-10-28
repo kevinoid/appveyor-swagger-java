@@ -165,11 +165,11 @@ public class ApiTest {
 	// Exclude updated field due to change on update operation
 	private static final FieldNameExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
 			"updated");
-	// Exclude nuGetFeed, repositoryBranch, securityDescriptor when comparing
+	// Exclude currentBuildId, nuGetFeed, repositoryBranch, securityDescriptor when comparing
 	// Project results from endpoints which don't include these
 	// Exclude builds and updated which change as the result of other tests
 	private static final FieldNameExclusionStrategy projectExcludes = new FieldNameExclusionStrategy(
-			"builds", "nuGetFeed", "repositoryBranch", "securityDescriptor",
+			"builds", "currentBuildId", "nuGetFeed", "repositoryBranch", "securityDescriptor",
 			"updated");
 
 	protected final ApiClient apiClient;
