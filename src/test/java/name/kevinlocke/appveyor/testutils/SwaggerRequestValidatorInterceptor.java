@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.atlassian.oai.validator.SwaggerRequestResponseValidator;
+import com.atlassian.oai.validator.OpenApiInteractionValidator;
 import com.atlassian.oai.validator.model.Request.Method;
 import com.atlassian.oai.validator.model.SimpleRequest;
 import com.atlassian.oai.validator.model.SimpleResponse;
@@ -150,7 +150,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		return buffer.readString(charset);
 	}
 
-	protected final SwaggerRequestResponseValidator validator;
+	protected final OpenApiInteractionValidator validator;
 
 	public SwaggerRequestValidatorInterceptor(String swaggerJsonUrlOrPayload) {
 		// additionalProperties validation is broken for schemas with allOf
@@ -159,7 +159,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 				.withLevel(SchemaValidator.ADDITIONAL_PROPERTIES_KEY,
 						ValidationReport.Level.IGNORE)
 				.build();
-		validator = SwaggerRequestResponseValidator
+		validator = OpenApiInteractionValidator
 				.createFor(swaggerJsonUrlOrPayload)
 				.withLevelResolver(levelResolver).build();
 	}

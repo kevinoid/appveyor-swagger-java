@@ -91,7 +91,7 @@
     <okhttp-version>2.7.5</okhttp-version>
     <swagger-annotations-version>1.5.21</swagger-annotations-version>
     <swagger-codegen-maven-plugin-version>2.2.2</swagger-codegen-maven-plugin-version>
-    <swagger-request-validator-version>1.4.2</swagger-request-validator-version>
+    <swagger-request-validator-version>2.0.2</swagger-request-validator-version>
     <!-- After updating testng, check JDK 7 support and enable CI testing.
          See https://github.com/cbeust/testng/commit/132a807 -->
     <testng-version>6.14.3</testng-version>
