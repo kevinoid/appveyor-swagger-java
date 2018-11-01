@@ -14,6 +14,7 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.logging.HttpLoggingInterceptor.Level;
 
 import name.kevinlocke.appveyor.ApiClient;
+import name.kevinlocke.appveyor.EnhancedApiClient;
 
 public final class TestApiClient {
 	private static final ApiClient testApiClient;
@@ -24,7 +25,7 @@ public final class TestApiClient {
 			throw new AssertionError("$APPVEYOR_API_TOKEN must be set");
 		}
 
-		testApiClient = new ApiClient();
+		testApiClient = new EnhancedApiClient();
 
 		// Log the API endpoint being used
 		StringBuilder apiEndpointMsg = new StringBuilder(
