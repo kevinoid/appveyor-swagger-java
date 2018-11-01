@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.Response;
 
 /**
@@ -34,8 +35,10 @@ public class EnhancedApiClient extends ApiClient {
 				//       which would cause this.deserialize() to fail.
 				//       It would also require extra code to buffer the body.
 				//       Instead, try to parse the string directly.
+				Type errorTokenType =
+						new TypeToken<name.kevinlocke.appveyor.model.Error>(){}.getType();
 				responseModel = this.getJSON()
-						.deserialize(bodyString, Error.class.getClass());
+						.deserialize(bodyString, errorTokenType);
 			} catch (JsonParseException parseException) {
 				throw new ApiException(response.message(), parseException,
 						response.code(), response.headers().toMultimap(), bodyString);
