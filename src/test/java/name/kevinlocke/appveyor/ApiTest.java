@@ -33,6 +33,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
+import org.testng.SkipException;
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
 
@@ -1214,14 +1215,33 @@ public class ApiTest {
 	public void getProjectDeployments() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
+
+		// getProjectDeployments is flaky and often returns 500 due to timeout.
+		// The recordsNumber value used by the website often changes.
+		// Document observed changes and ignore timeout errors.
+		//
 		// Note: On 2018-06-05 started failing for recordsNumber < 11.
 		//       Use 12 as the website currently does.
 		// Note: On 2018-09-03 started failing for recordsNumber == 12.
 		//       Use 10 as the website currently does.
 		// Note: On 2018-09-20 started failing for recordsNumber == 10.
 		//       Use 11 as the website currently does.
-		ProjectDeploymentsResults projectDeployments = projectApi
-				.getProjectDeployments(accountName, slug, 11);
+		// Note: On 2018-10-31 timeout errors.
+		//       Website using 10 again.
+		ProjectDeploymentsResults projectDeployments;
+		try {
+			projectDeployments =
+					projectApi.getProjectDeployments(accountName, slug, 11);
+		} catch (ApiExceptionWithModel ex) {
+			String errMsg = ex.getResponseModel().getMessage();
+			if (Pattern.matches("(?i)\\btime\\s*out\\b", errMsg))
+			{
+				throw new SkipException("getProjectDeployments timeout", ex);
+			}
+
+			throw ex;
+		}
+
 		Project project = projectDeployments.getProject();
 		assertModelAgreesExcluding(project, testProject, projectExcludes);
 		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
