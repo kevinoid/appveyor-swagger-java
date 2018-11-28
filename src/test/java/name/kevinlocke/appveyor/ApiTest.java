@@ -77,6 +77,7 @@ import name.kevinlocke.appveyor.model.ProjectDeploymentsResults;
 import name.kevinlocke.appveyor.model.ProjectHistory;
 import name.kevinlocke.appveyor.model.ProjectSettingsResults;
 import name.kevinlocke.appveyor.model.ProjectWithConfiguration;
+import name.kevinlocke.appveyor.model.ReRunBuildRequest;
 import name.kevinlocke.appveyor.model.RepositoryProvider;
 import name.kevinlocke.appveyor.model.Role;
 import name.kevinlocke.appveyor.model.RoleAce;
@@ -194,6 +195,7 @@ public class ApiTest {
 	protected volatile Project testProject;
 	protected volatile ProjectWithConfiguration testProjectConfig;
 	protected volatile String testProjectYaml;
+	protected volatile Build testRebuild;
 	protected volatile RoleWithGroups testRole;
 	protected volatile UserAccount testUser;
 
@@ -888,24 +890,27 @@ public class ApiTest {
 		assertEquals(build.getBuildNumber(), TEST_PROJECT_BUILD_NUMBER);
 	}
 
-	// This is not really a test, but is used for synchronization by other tests
-	@Test(dependsOnMethods = "startBuild", groups = "project")
-	public void waitForBuild() throws ApiException, InterruptedException {
-		String accountName = testProject.getAccountName();
-		String slug = testProject.getSlug();
-		String version = testBuild.getVersion();
-		ProjectBuildResults projectBuild;
-		Status buildStatus;
+	private ProjectBuildResults waitForBuild(String accountName, String slug, String version)
+			throws ApiException, InterruptedException
+	{
 		while (true) {
-			projectBuild = projectApi.getProjectBuildByVersion(accountName,
+			ProjectBuildResults projectBuild = projectApi.getProjectBuildByVersion(accountName,
 					slug, version);
-			buildStatus = projectBuild.getBuild().getStatus();
+			Status buildStatus = projectBuild.getBuild().getStatus();
 			if (buildStatus != Status.QUEUED && buildStatus != Status.RUNNING) {
-				break;
+				return projectBuild;
 			}
 			Thread.sleep(1000);
 		}
+	}
 
+	// This is not really a test, but is used for synchronization by other tests
+	@Test(dependsOnMethods = "startBuild", groups = "project")
+	public void waitForBuild() throws ApiException, InterruptedException {
+		ProjectBuildResults projectBuild = this.waitForBuild(
+				testProject.getAccountName(),
+				testProject.getSlug(),
+				testBuild.getVersion());
 		Build build = projectBuild.getBuild();
 		testBuild = build;
 		assertNotNull(build.getFinished());
@@ -919,6 +924,58 @@ public class ApiTest {
 		if (status != Status.SUCCESS) {
 			throw new AssertionError(String.format(
 					"Build status %s != %s.  Check getBuildLog output.", status,
+					Status.SUCCESS));
+		}
+	}
+
+	@Test(dependsOnMethods = "successfulBuild", groups = "project")
+	public void reRunBuild() throws ApiException {
+		Build origBuild = testBuild;
+		int buildId = origBuild.getBuildId();
+
+		try {
+			ReRunBuildRequest reRunIncompleteBuild = new ReRunBuildRequest()
+					.buildId(buildId)
+					.reRunIncomplete(true);
+			buildApi.reRunBuild(reRunIncompleteBuild);
+			fail("Expected ApiException due to reRunIncomplete: true");
+		} catch (ApiExceptionWithModel ex) {
+			assertEquals(ex.getCode(), 500);
+			assertEquals(
+					ex.getResponseModel().getMessage(),
+					"No failed or cancelled jobs in build with ID " + buildId);
+		}
+
+		ReRunBuildRequest reRunBuild = new ReRunBuildRequest()
+				.buildId(buildId);
+		Build rebuild = buildApi.reRunBuild(reRunBuild);
+		testRebuild = rebuild;
+		assertEquals(rebuild.getCommitId(), origBuild.getCommitId());
+		assertEquals(rebuild.getProjectId(), origBuild.getProjectId());
+		assertNotEquals(rebuild.getBuildId(), origBuild.getBuildId());
+		assertNotEquals(rebuild.getVersion(), origBuild.getVersion());
+	}
+
+	// This is not really a test, but is used for synchronization by other tests
+	@Test(dependsOnMethods = "reRunBuild", groups = "project")
+	public void waitForRebuild() throws ApiException, InterruptedException {
+		ProjectBuildResults projectBuild = this.waitForBuild(
+				testProject.getAccountName(),
+				testProject.getSlug(),
+				testRebuild.getVersion());
+		Build build = projectBuild.getBuild();
+		testRebuild = build;
+		assertNotNull(build.getFinished());
+		Project project = projectBuild.getProject();
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
+	}
+
+	@Test(dependsOnMethods = "waitForRebuild", groups = "project")
+	public void successfulRebuild() {
+		Status status = testRebuild.getStatus();
+		if (status != Status.SUCCESS) {
+			throw new AssertionError(String.format(
+					"Rebuild status %s != %s.  Check getBuildLog output.", status,
 					Status.SUCCESS));
 		}
 	}
