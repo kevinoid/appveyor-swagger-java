@@ -897,7 +897,9 @@ public class ApiTest {
 			ProjectBuildResults projectBuild = projectApi.getProjectBuildByVersion(accountName,
 					slug, version);
 			Status buildStatus = projectBuild.getBuild().getStatus();
-			if (buildStatus != Status.QUEUED && buildStatus != Status.RUNNING) {
+			if (buildStatus != Status.QUEUED
+					&& buildStatus != Status.STARTING
+					&& buildStatus != Status.RUNNING) {
 				return projectBuild;
 			}
 			Thread.sleep(1000);
