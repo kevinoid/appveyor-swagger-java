@@ -200,7 +200,8 @@ public class ApiTest {
 	protected volatile UserAccount testUser;
 
 	public ApiTest() {
-		apiClient = TestApiClient.getTestApiClient();
+		apiClient = TestApiClient.getApiClientFromEnv("APPVEYOR_API_TOKEN",
+				"APPVEYOR_ACCOUNT_NAME");
 		buildApi = new BuildApi(apiClient);
 		collaboratorApi = new CollaboratorApi(apiClient);
 		deploymentApi = new DeploymentApi(apiClient);
