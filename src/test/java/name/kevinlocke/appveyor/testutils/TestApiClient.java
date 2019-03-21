@@ -60,13 +60,7 @@ public final class TestApiClient {
 
 		List<Interceptor> interceptors = httpClient.interceptors();
 
-		String swaggerUrl = TestApiClient.class.getResource("/swagger.yaml")
-				.toString();
-		// Swagger20Parser requires file URLs to start with file://
-		// https://github.com/swagger-api/swagger-parser/pull/374
-		if (!swaggerUrl.startsWith("file://")) {
-			swaggerUrl = swaggerUrl.replace("file:", "file://");
-		}
+		String swaggerUrl = TestApiClient.class.getResource("/swagger.yaml").toString();
 		interceptors.add(new SwaggerRequestValidatorInterceptor(swaggerUrl));
 
 		// Note: Must be set after validator interceptor is added to print
