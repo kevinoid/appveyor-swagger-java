@@ -99,6 +99,31 @@ documentation](https://kevinoid.github.io/appveyor-swagger-java/swaggerdocs/#Doc
 There is also [Swagger API
 Documentation](https://kevinoid.github.io/appveyor-swagger).
 
+
+## Development in Eclipse
+
+Developers who prefer to use Eclipse to work on this project can use the
+following steps to set up the project on their machine:
+
+1.  [Install the M2Eclipse plugin.](https://www.eclipse.org/m2e/)
+2.  Import the project (from **File > Import...**) using either **Check out
+    Maven Projects from SCM** (if this repo is already cloned locally) or
+    **Existing Maven Projects** (if this repo is not yet cloned locally).
+    (Ignore "Plugin execution not covered by lifecycle configuration"
+    warnings.)
+3.  Run `mvn process-sources` in the project directory (outside of Eclipse).
+4.  Add `target/generated-sources/swagger/src/main/java` to the build path as
+    a source folder (e.g. in the Eclipse Package Explorer window, right-click
+    the folder and choose **Build Path > Use as Source Folder**).
+5.  (Optional) Set **Ignore optional compile problems: Yes** on
+    `target/generated-sources/swagger/src/main/java` in the Build
+    Path configuration (since the code is automatically generated and requires
+    changes in `swagger-codegen` to fix).
+6.  (Optional) Configure **Java Code Style > Formatter** in the project
+    properties to use the profile from `.eclipse-formatter.xml`.
+7.  (Optional) [Format source code on
+    save](https://stackoverflow.com/a/234625).
+
 ## Testing
 
 Running the tests defined in this project requires an AppVeyor account.  The
