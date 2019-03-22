@@ -137,6 +137,10 @@ public final class TestApiClient {
 		ConcurrentHttpLoggingInterceptor logInterceptor =
 				new ConcurrentHttpLoggingInterceptor(httpLogger);
 		logInterceptor.setLevel(Level.BODY);
+		logInterceptor.redactHeader("Authorization");
+		logInterceptor.redactHeader("Proxy-Authenticate");
+		logInterceptor.redactHeader("Proxy-Authorization");
+		logInterceptor.redactHeader("WWW-Authenticate");
 		interceptors.add(logInterceptor);
 
 		apiClient.setJSON(new AssertLosslessJson());
