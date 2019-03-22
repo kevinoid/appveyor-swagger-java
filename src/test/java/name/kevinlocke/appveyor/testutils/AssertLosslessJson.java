@@ -14,7 +14,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
-import name.kevinlocke.appveyor.ApiClient;
 import name.kevinlocke.appveyor.JSON;
 
 /**
@@ -150,10 +149,6 @@ public class AssertLosslessJson extends JSON {
 	public static void assertJsonEquals(JsonElement expected,
 			JsonElement actual) throws AssertionError {
 		assertJsonEquals(expected, actual, new ArrayDeque<String>());
-	}
-
-	public AssertLosslessJson(ApiClient apiClient) {
-		super(apiClient);
 	}
 
 	protected <T> void assertSameJson(String body, T obj) {

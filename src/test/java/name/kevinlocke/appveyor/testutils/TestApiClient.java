@@ -139,7 +139,7 @@ public final class TestApiClient {
 		logInterceptor.setLevel(Level.BODY);
 		interceptors.add(logInterceptor);
 
-		apiClient.setJSON(new AssertLosslessJson(apiClient));
+		apiClient.setJSON(new AssertLosslessJson());
 
 		return apiClient;
 	}

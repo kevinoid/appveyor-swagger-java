@@ -319,7 +319,7 @@ public class ApiTest {
 						List<Role> roles = roleApi.getRoles();
 						Map<String, Role> newSystemRolesByName = new TreeMap<>();
 						for (Role role : roles) {
-							if (role.getIsSystem()) {
+							if (role.isIsSystem()) {
 								newSystemRolesByName.put(role.getName(), role);
 							}
 						}
@@ -378,7 +378,7 @@ public class ApiTest {
 			throws ApiException {
 		TreeSet<Role> systemRoles = new TreeSet<>(new RoleNameComparator());
 		for (Role role : roles) {
-			if (role.getIsSystem()) {
+			if (role.isIsSystem()) {
 				systemRoles.add(role);
 			}
 		}
@@ -644,7 +644,7 @@ public class ApiTest {
 		// Assert that project contains expected properties
 		assertNotEquals(project.getName().length(), 0);
 		assertNotEquals((int) project.getProjectId(), 0);
-		assertNotNull(project.getIsSelected());
+		assertNotNull(project.isIsSelected());
 
 		List<DeploymentEnvironmentProject> emptyProjects = Collections
 				.emptyList();
@@ -763,7 +763,7 @@ public class ApiTest {
 		assertNotNull(nuGetFeed.getId());
 		assertNotNull(nuGetFeed.getName());
 		assertNotNull(nuGetFeed.getProjectId());
-		assertNotNull(nuGetFeed.getPublishingEnabled());
+		assertNotNull(nuGetFeed.isPublishingEnabled());
 
 		SecurityDescriptor security = projectConfig.getSecurityDescriptor();
 		assertNotNull(security);
