@@ -97,6 +97,7 @@
     <!-- After updating testng, check JDK 7 support and enable CI testing.
          See https://github.com/cbeust/testng/commit/132a807 -->
     <testng-version>6.14.3</testng-version>
+    <versions-maven-plugin-version>2.7</versions-maven-plugin-version>
   </properties>
 
   <profiles>
@@ -258,6 +259,14 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>${versions-maven-plugin-version}</version>
+        <configuration>
+          <rulesUri>file:///${project.basedir}/.maven-versions.xml</rulesUri>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>com.googlecode.maven-download-plugin</groupId>
