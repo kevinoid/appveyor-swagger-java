@@ -62,10 +62,10 @@ public class AssertModels {
 	}
 
 	protected static final Gson defaultGson = newGsonBuilder().create();
-	protected static final JSONComparator agreesComparator = new CommonPropertiesJSONComparator(
-			JSONCompareMode.STRICT);
-	protected static final JSONComparator equalsComparator = new DefaultComparator(
-			JSONCompareMode.STRICT);
+	protected static final JSONComparator agreesComparator =
+			new CommonPropertiesJSONComparator(JSONCompareMode.STRICT);
+	protected static final JSONComparator equalsComparator =
+			new DefaultComparator(JSONCompareMode.STRICT);
 
 	/**
 	 * Asserts that two model class instances are equal for common properties.
@@ -131,8 +131,8 @@ public class AssertModels {
 					&& expectedElement instanceof JSONObject) {
 				JSONObject actualObject = (JSONObject) actualElement;
 				JSONObject expectedObject = (JSONObject) expectedElement;
-				JSONCompareResult result = comparator
-						.compareJSON(expectedObject, actualObject);
+				JSONCompareResult result =
+						comparator.compareJSON(expectedObject, actualObject);
 				if (result.failed()) {
 					// Create TestNG failure so actual/expected can be compared
 					// in tools such as the TestNG Eclipse Plugin
@@ -148,8 +148,8 @@ public class AssertModels {
 					&& expectedElement instanceof JSONArray) {
 				JSONArray actualArray = (JSONArray) actualElement;
 				JSONArray expectedArray = (JSONArray) expectedElement;
-				JSONCompareResult result = comparator.compareJSON(expectedArray,
-						actualArray);
+				JSONCompareResult result =
+						comparator.compareJSON(expectedArray, actualArray);
 				if (result.failed()) {
 					// Create TestNG failure so actual/expected can be compared
 					// in tools such as the TestNG Eclipse Plugin
@@ -194,6 +194,5 @@ public class AssertModels {
 	}
 
 	// Prevent instantiation
-	private AssertModels() {
-	}
+	private AssertModels() {}
 }

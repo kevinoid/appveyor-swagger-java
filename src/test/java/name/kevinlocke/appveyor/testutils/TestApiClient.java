@@ -44,10 +44,10 @@ public final class TestApiClient {
 	 * from given environment variables.
 	 *
 	 * @param apiTokenVar Name of environment variable with the bearer token to
-	 *                    use for API Authorization.
+	 *        use for API Authorization.
 	 * @param accountName Name of environment variable with the account name for
-	 *                    user-level (v2) API, null or empty string for
-	 *                    non-user-level (v1) API.
+	 *        user-level (v2) API, null or empty string for non-user-level (v1)
+	 *        API.
 	 * @return ApiClient with logging and assertion checking suitable for tests.
 	 */
 	public static ApiClient getApiClientFromEnv(String apiTokenVar,
@@ -66,9 +66,9 @@ public final class TestApiClient {
 	 * Gets an ApiClient configured for testing with a given token and account
 	 * name.
 	 *
-	 * @param apiToken    Bearer token to use for API Authorization.
+	 * @param apiToken Bearer token to use for API Authorization.
 	 * @param accountName Account name for user-level (v2) API, null or empty
-	 *                    string for non-user-level (v1) API.
+	 *        string for non-user-level (v1) API.
 	 * @return ApiClient with logging and assertion checking suitable for tests.
 	 */
 	public static ApiClient getApiClient(String apiToken, String accountName) {
@@ -182,6 +182,5 @@ public final class TestApiClient {
 	}
 
 	// Prevent instantiation
-	private TestApiClient() {
-	}
+	private TestApiClient() {}
 }

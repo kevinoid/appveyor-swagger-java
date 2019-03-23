@@ -18,7 +18,8 @@ import com.squareup.okhttp.Response;
  */
 public class EnhancedApiClient extends ApiClient {
 	@Override
-	public <T> T handleResponse(Response response, Type returnType) throws ApiException {
+	public <T> T handleResponse(Response response, Type returnType)
+			throws ApiException {
 		if (!response.isSuccessful()) {
 			String bodyString;
 			try {
@@ -31,17 +32,19 @@ public class EnhancedApiClient extends ApiClient {
 			name.kevinlocke.appveyor.model.Error responseModel;
 			try {
 				// Note: Error responses have type text/plain
-				//       (when the URL path doesn't have an extension)
-				//       which would cause this.deserialize() to fail.
-				//       It would also require extra code to buffer the body.
-				//       Instead, try to parse the string directly.
+				// (when the URL path doesn't have an extension)
+				// which would cause this.deserialize() to fail.
+				// It would also require extra code to buffer the body.
+				// Instead, try to parse the string directly.
 				Type errorTokenType =
-						new TypeToken<name.kevinlocke.appveyor.model.Error>(){}.getType();
-				responseModel = this.getJSON()
-						.deserialize(bodyString, errorTokenType);
+						new TypeToken<name.kevinlocke.appveyor.model.Error>() {}
+								.getType();
+				responseModel =
+						this.getJSON().deserialize(bodyString, errorTokenType);
 			} catch (JsonParseException parseException) {
 				throw new ApiException(response.message(), parseException,
-						response.code(), response.headers().toMultimap(), bodyString);
+						response.code(), response.headers().toMultimap(),
+						bodyString);
 			}
 
 			throw new ApiExceptionWithModel(response.message(), response.code(),

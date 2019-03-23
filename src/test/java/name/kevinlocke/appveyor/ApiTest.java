@@ -125,54 +125,60 @@ public class ApiTest {
 		return randUrlSafe;
 	}
 
-	public static final String TEST_BADGE_PROVIDER = RepositoryProvider.GITHUB
-			.toString();
+	public static final String TEST_BADGE_PROVIDER =
+			RepositoryProvider.GITHUB.toString();
 	public static final String TEST_BADGE_ACCOUNT = "gruntjs";
 	public static final String TEST_BADGE_SLUG = "grunt";
 	// AppVeyor account must exist and be different than APPVEYOR_API_TOKEN acct
-	public static final String TEST_COLLABORATOR_EMAIL = "appveyor-swagger@example.com";
+	public static final String TEST_COLLABORATOR_EMAIL =
+			"appveyor-swagger@example.com";
 	public static final String TEST_COLLABORATOR_ROLE_NAME = "User";
 	public static final String TEST_ENCRYPT_VALUE = "encryptme";
 	public static final String TEST_ENVIRONMENT_PREFIX = "Test Env ";
-	public static final String TEST_ENVIRONMENT_NAME = TEST_ENVIRONMENT_PREFIX
-			+ randStr();
+	public static final String TEST_ENVIRONMENT_NAME =
+			TEST_ENVIRONMENT_PREFIX + randStr();
 	public static final Integer TEST_PROJECT_BUILD_NUMBER = 45;
-	public static final String TEST_PROJECT_BUILD_SCRIPT = Resources
-			.getAsString("/buildscript.ps1");
+	public static final String TEST_PROJECT_BUILD_SCRIPT =
+			Resources.getAsString("/buildscript.ps1");
 	public static final String TEST_PROJECT_BRANCH = "master";
 	// Note: Using GitHub provider requires GitHub auth to AppVeyor test user
-	public static final RepositoryProvider TEST_PROJECT_REPO_PROVIDER = RepositoryProvider.GIT;
-	public static final String TEST_PROJECT_REPO_NAME = "https://github.com/kevinoid/empty.git";
-	public static final String TEST_PROJECT_TEST_SCRIPT = Resources
-			.getAsString("/testscript.ps1");
+	public static final RepositoryProvider TEST_PROJECT_REPO_PROVIDER =
+			RepositoryProvider.GIT;
+	public static final String TEST_PROJECT_REPO_NAME =
+			"https://github.com/kevinoid/empty.git";
+	public static final String TEST_PROJECT_TEST_SCRIPT =
+			Resources.getAsString("/testscript.ps1");
 	public static final String TEST_ROLE_PREFIX = "Test Role ";
 	public static final String TEST_ROLE_NAME = TEST_ROLE_PREFIX + randStr();
 	public static final String TEST_USER_EMAIL_AT_DOMAIN = "@example.com";
-	public static final String TEST_USER_EMAIL = randStr()
-			+ TEST_USER_EMAIL_AT_DOMAIN;
+	public static final String TEST_USER_EMAIL =
+			randStr() + TEST_USER_EMAIL_AT_DOMAIN;
 	public static final String TEST_USER_PREFIX = "Test User ";
 	public static final String TEST_USER_NAME = TEST_USER_PREFIX + randStr();
 	public static final String TEST_USER_ROLE_NAME = "User";
 
 	// Exclude jobs property of a build for operations which do not return it
-	private static final FieldNameExclusionStrategy buildExcludeJobs = new FieldNameExclusionStrategy(
-			"jobs", "updated");
+	private static final FieldNameExclusionStrategy buildExcludeJobs =
+			new FieldNameExclusionStrategy("jobs", "updated");
 	// The message counts are updated asychronously via the Build Worker API.
 	// Messages can be added after the build reaches a final state and are
 	// therefore not reliable enough for comparison in the tests.
-	private static final FieldNameExclusionStrategy buildJobExcludes = new FieldNameExclusionStrategy(
-			"compilationErrorsCount", "compilationMessagesCount",
-			"compilationWarningsCount", "failedTestsCount", "messagesCount",
-			"passedTestsCount", "testsCount", "updated");
+	private static final FieldNameExclusionStrategy buildJobExcludes =
+			new FieldNameExclusionStrategy("compilationErrorsCount",
+					"compilationMessagesCount", "compilationWarningsCount",
+					"failedTestsCount", "messagesCount", "passedTestsCount",
+					"testsCount", "updated");
 	// Exclude updated field due to change on update operation
-	private static final FieldNameExclusionStrategy excludeUpdated = new FieldNameExclusionStrategy(
-			"updated");
-	// Exclude currentBuildId, nuGetFeed, repositoryBranch, securityDescriptor when comparing
+	private static final FieldNameExclusionStrategy excludeUpdated =
+			new FieldNameExclusionStrategy("updated");
+	// Exclude currentBuildId, nuGetFeed, repositoryBranch, securityDescriptor
+	// when comparing
 	// Project results from endpoints which don't include these
 	// Exclude builds and updated which change as the result of other tests
-	private static final FieldNameExclusionStrategy projectExcludes = new FieldNameExclusionStrategy(
-			"builds", "currentBuildId", "nuGetFeed", "repositoryBranch", "securityDescriptor",
-			"updated");
+	private static final FieldNameExclusionStrategy projectExcludes =
+			new FieldNameExclusionStrategy("builds", "currentBuildId",
+					"nuGetFeed", "repositoryBranch", "securityDescriptor",
+					"updated");
 
 	protected final ApiClient apiClient;
 	protected final BuildApi buildApi;
@@ -217,8 +223,8 @@ public class ApiTest {
 	 */
 	protected void normalizeSecurity(SecurityDescriptor securityDescriptor)
 			throws ApiException {
-		Iterator<RoleAce> roleAcesIter = securityDescriptor.getRoleAces()
-				.iterator();
+		Iterator<RoleAce> roleAcesIter =
+				securityDescriptor.getRoleAces().iterator();
 		while (roleAcesIter.hasNext()) {
 			RoleAce roleAce = roleAcesIter.next();
 			if (getSystemRoleByName(roleAce.getName()) == null) {
@@ -317,7 +323,8 @@ public class ApiTest {
 				try {
 					if (systemRolesByName == null) {
 						List<Role> roles = roleApi.getRoles();
-						Map<String, Role> newSystemRolesByName = new TreeMap<>();
+						Map<String, Role> newSystemRolesByName =
+								new TreeMap<>();
 						for (Role role : roles) {
 							if (role.isIsSystem()) {
 								newSystemRolesByName.put(role.getName(), role);
@@ -474,8 +481,8 @@ public class ApiTest {
 	public void updateUser() throws ApiException {
 		userApi.updateUser(testUser);
 
-		UserAccountRolesResults updatedUserWithRoles = userApi
-				.getUser(testUser.getUserId());
+		UserAccountRolesResults updatedUserWithRoles =
+				userApi.getUser(testUser.getUserId());
 		UserAccount updatedUser = updatedUserWithRoles.getUser();
 		assertNotNull(updatedUser.getUpdated());
 		assertModelEqualsExcluding(updatedUser, testUser, excludeUpdated);
@@ -502,8 +509,8 @@ public class ApiTest {
 	public void addCollaborator() throws ApiException {
 		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
 		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		int roleId = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME)
-				.getRoleId();
+		int roleId =
+				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
 		collaboratorAddition.setRoleId(roleId);
 
 		try {
@@ -522,8 +529,8 @@ public class ApiTest {
 	public void addCollaboratorDuplicate() throws ApiException {
 		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
 		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		int roleId = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME)
-				.getRoleId();
+		int roleId =
+				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
 		collaboratorAddition.setRoleId(roleId);
 		try {
 			collaboratorApi.addCollaborator(collaboratorAddition);
@@ -546,20 +553,20 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addCollaborator", groups = "collaborator")
 	public void getCollaborators() throws ApiException {
-		UserAccount collaborator = getCollaboratorByEmail(
-				TEST_COLLABORATOR_EMAIL);
+		UserAccount collaborator =
+				getCollaboratorByEmail(TEST_COLLABORATOR_EMAIL);
 		assertNotNull(collaborator, "Test collaborator not found");
 		testCollaborator = collaborator;
 		assertEquals(collaborator.getRoleName(), TEST_COLLABORATOR_ROLE_NAME);
-		Integer roleId = getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME)
-				.getRoleId();
+		Integer roleId =
+				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
 		assertEquals(collaborator.getRoleId(), roleId);
 	}
 
 	@Test(dependsOnMethods = "getCollaborators", groups = "collaborator")
 	public void getCollaborator() throws ApiException {
-		UserAccountRolesResults collaboratorWithRoles = collaboratorApi
-				.getCollaborator(testCollaborator.getUserId());
+		UserAccountRolesResults collaboratorWithRoles =
+				collaboratorApi.getCollaborator(testCollaborator.getUserId());
 		assertNotNull(collaboratorWithRoles, "Test collaborator not found");
 
 		UserAccount gotCollaborator = collaboratorWithRoles.getUser();
@@ -599,14 +606,16 @@ public class ApiTest {
 	@Test(groups = "environment")
 	public void addEnvironment() throws ApiException {
 		// Use a Webhook to http://example.com since Webhooks always succeed
-		DeploymentEnvironmentSettings settings = new DeploymentEnvironmentSettings();
+		DeploymentEnvironmentSettings settings =
+				new DeploymentEnvironmentSettings();
 		settings.addProviderSettingsItem(new StoredNameValue().name("url")
 				.value(new StoredValue().value("http://example.com")));
-		DeploymentEnvironmentAddition environmentAddition = new DeploymentEnvironmentAddition()
-				.name(TEST_ENVIRONMENT_NAME)
-				.provider(DeploymentProviderType.WEBHOOK).settings(settings);
-		DeploymentEnvironmentWithSettings environment = environmentApi
-				.addEnvironment(environmentAddition);
+		DeploymentEnvironmentAddition environmentAddition =
+				new DeploymentEnvironmentAddition().name(TEST_ENVIRONMENT_NAME)
+						.provider(DeploymentProviderType.WEBHOOK)
+						.settings(settings);
+		DeploymentEnvironmentWithSettings environment =
+				environmentApi.addEnvironment(environmentAddition);
 		normalizeSecurity(environment);
 		testEnvironment = environment;
 		assertEquals(environment.getName(), TEST_ENVIRONMENT_NAME);
@@ -625,18 +634,18 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
 	public void getEnvironments() throws ApiException {
-		DeploymentEnvironmentLookupModel namedEnvironment = getEnvironmentByName(
-				testEnvironment.getName());
+		DeploymentEnvironmentLookupModel namedEnvironment =
+				getEnvironmentByName(testEnvironment.getName());
 		assertModelAgrees(namedEnvironment, testEnvironment);
 	}
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
 	public void getEnvironmentSettings() throws ApiException {
 		Integer testEnvId = testEnvironment.getDeploymentEnvironmentId();
-		DeploymentEnvironmentSettingsResults gotEnvSettingsObj = environmentApi
-				.getEnvironmentSettings(testEnvId);
-		DeploymentEnvironmentWithSettings gotEnv = gotEnvSettingsObj
-				.getEnvironment();
+		DeploymentEnvironmentSettingsResults gotEnvSettingsObj =
+				environmentApi.getEnvironmentSettings(testEnvId);
+		DeploymentEnvironmentWithSettings gotEnv =
+				gotEnvSettingsObj.getEnvironment();
 
 		List<DeploymentEnvironmentProject> projects = gotEnv.getProjects();
 		assertNotEquals(projects.size(), 0);
@@ -646,8 +655,8 @@ public class ApiTest {
 		assertNotEquals((int) project.getProjectId(), 0);
 		assertNotNull(project.isIsSelected());
 
-		List<DeploymentEnvironmentProject> emptyProjects = Collections
-				.emptyList();
+		List<DeploymentEnvironmentProject> emptyProjects =
+				Collections.emptyList();
 		gotEnv.setProjects(emptyProjects);
 		normalizeSecurity(gotEnv);
 		assertModelEqualsExcluding(gotEnv, testEnvironment, excludeUpdated);
@@ -655,8 +664,8 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
 	public void updateEnvironment() throws ApiException {
-		DeploymentEnvironmentWithSettings updatedEnv = environmentApi
-				.updateEnvironment(testEnvironment);
+		DeploymentEnvironmentWithSettings updatedEnv =
+				environmentApi.updateEnvironment(testEnvironment);
 		assertNotNull(updatedEnv);
 		normalizeSecurity(updatedEnv);
 		assertModelEqualsExcluding(updatedEnv, testEnvironment, excludeUpdated);
@@ -730,8 +739,8 @@ public class ApiTest {
 		Build cancelBuild = buildApi.startBuild(buildStart);
 		String version = cancelBuild.getVersion();
 		buildApi.cancelBuild(accountName, slug, version);
-		ProjectBuildResults cancelledBuildProject = projectApi
-				.getProjectBuildByVersion(accountName, slug, version);
+		ProjectBuildResults cancelledBuildProject =
+				projectApi.getProjectBuildByVersion(accountName, slug, version);
 		Build cancelledBuild = cancelledBuildProject.getBuild();
 		Status cancelledBuildStatus = cancelledBuild.getStatus();
 		assertTrue(cancelledBuildStatus == Status.CANCELLED
@@ -742,8 +751,8 @@ public class ApiTest {
 	public void getProjectSettings() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		ProjectSettingsResults settings = projectApi
-				.getProjectSettings(accountName, slug);
+		ProjectSettingsResults settings =
+				projectApi.getProjectSettings(accountName, slug);
 		ProjectWithConfiguration projectConfig = settings.getSettings();
 		normalizeSecurity(projectConfig);
 		testProjectConfig = projectConfig;
@@ -780,8 +789,8 @@ public class ApiTest {
 
 	// Run after updateProjectSettingsYaml to ensure build scripts are
 	// configured for startBuild and not reset by the Yaml get/update ordering.
-	@Test(dependsOnMethods = { "getProjectSettings",
-			"updateProjectSettingsYaml" }, groups = "project")
+	@Test(dependsOnMethods = {"getProjectSettings",
+			"updateProjectSettingsYaml"}, groups = "project")
 	public void updateProject() throws ApiException {
 		// Set dummy build/test scripts so build succeeds
 		// Note: appveyor.yml is ignored outside of GitHub unless configured:
@@ -814,10 +823,10 @@ public class ApiTest {
 
 		String accountName = projectConfig.getAccountName();
 		String slug = projectConfig.getSlug();
-		ProjectSettingsResults updatedProjectSettings = projectApi
-				.getProjectSettings(accountName, slug);
-		ProjectWithConfiguration updatedProject = updatedProjectSettings
-				.getSettings();
+		ProjectSettingsResults updatedProjectSettings =
+				projectApi.getProjectSettings(accountName, slug);
+		ProjectWithConfiguration updatedProject =
+				updatedProjectSettings.getSettings();
 		assertNotNull(updatedProject.getUpdated());
 		ProjectConfiguration updatedConfig = updatedProject.getConfiguration();
 		List<Script> buildScripts = updatedConfig.getBuildScripts();
@@ -833,26 +842,27 @@ public class ApiTest {
 	public void getProjectEnvironmentVariables() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		List<StoredNameValue> envVars = projectApi
-				.getProjectEnvironmentVariables(accountName, slug);
+		List<StoredNameValue> envVars =
+				projectApi.getProjectEnvironmentVariables(accountName, slug);
 
-		List<StoredNameValue> testVars = testProjectConfig.getConfiguration()
-				.getEnvironmentVariables();
+		List<StoredNameValue> testVars =
+				testProjectConfig.getConfiguration().getEnvironmentVariables();
 		assertNotEquals(testVars.size(), 0);
 		assertModelAgrees(envVars, testVars);
 	}
 
-	@Test(dependsOnMethods = "getProjectEnvironmentVariables", groups = "project")
+	@Test(dependsOnMethods = "getProjectEnvironmentVariables",
+			groups = "project")
 	public void updateProjectEnvironmentVariables() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		List<StoredNameValue> newVars = Arrays
-				.asList(new StoredNameValue().name("UPDATED").value(
+		List<StoredNameValue> newVars =
+				Arrays.asList(new StoredNameValue().name("UPDATED").value(
 						new StoredValue().isEncrypted(false).value("value")));
 		projectApi.updateProjectEnvironmentVariables(accountName, slug,
 				newVars);
-		List<StoredNameValue> envVars = projectApi
-				.getProjectEnvironmentVariables(accountName, slug);
+		List<StoredNameValue> envVars =
+				projectApi.getProjectEnvironmentVariables(accountName, slug);
 		assertModelAgrees(envVars, newVars);
 	}
 
@@ -867,8 +877,8 @@ public class ApiTest {
 	// Depends on cancelBuild so that the build number will be set after the
 	// cancelled build is started. That way there is no chance of the build
 	// number being used by cancelBuild instead of startBuild.
-	@Test(dependsOnMethods = { "cancelBuild",
-			"updateProject" }, groups = "project")
+	@Test(dependsOnMethods = {"cancelBuild", "updateProject"},
+			groups = "project")
 	public void updateProjectBuildNumber() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -881,25 +891,23 @@ public class ApiTest {
 	public void startBuild() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		BuildStartRequest buildStart = new BuildStartRequest()
-				.accountName(accountName).projectSlug(slug)
-				.branch(TEST_PROJECT_BRANCH)
-				.putEnvironmentVariablesItem("TEST_VAR", "1");
+		BuildStartRequest buildStart =
+				new BuildStartRequest().accountName(accountName)
+						.projectSlug(slug).branch(TEST_PROJECT_BRANCH)
+						.putEnvironmentVariablesItem("TEST_VAR", "1");
 		Build build = buildApi.startBuild(buildStart);
 		testBuild = build;
 		assertEquals(build.getBranch(), TEST_PROJECT_BRANCH);
 		assertEquals(build.getBuildNumber(), TEST_PROJECT_BUILD_NUMBER);
 	}
 
-	private ProjectBuildResults waitForBuild(String accountName, String slug, String version)
-			throws ApiException, InterruptedException
-	{
+	private ProjectBuildResults waitForBuild(String accountName, String slug,
+			String version) throws ApiException, InterruptedException {
 		while (true) {
-			ProjectBuildResults projectBuild = projectApi.getProjectBuildByVersion(accountName,
-					slug, version);
+			ProjectBuildResults projectBuild = projectApi
+					.getProjectBuildByVersion(accountName, slug, version);
 			Status buildStatus = projectBuild.getBuild().getStatus();
-			if (buildStatus != Status.QUEUED
-					&& buildStatus != Status.STARTING
+			if (buildStatus != Status.QUEUED && buildStatus != Status.STARTING
 					&& buildStatus != Status.RUNNING) {
 				return projectBuild;
 			}
@@ -910,10 +918,9 @@ public class ApiTest {
 	// This is not really a test, but is used for synchronization by other tests
 	@Test(dependsOnMethods = "startBuild", groups = "project")
 	public void waitForBuild() throws ApiException, InterruptedException {
-		ProjectBuildResults projectBuild = this.waitForBuild(
-				testProject.getAccountName(),
-				testProject.getSlug(),
-				testBuild.getVersion());
+		ProjectBuildResults projectBuild =
+				this.waitForBuild(testProject.getAccountName(),
+						testProject.getSlug(), testBuild.getVersion());
 		Build build = projectBuild.getBuild();
 		testBuild = build;
 		assertNotNull(build.getFinished());
@@ -938,19 +945,16 @@ public class ApiTest {
 
 		try {
 			ReRunBuildRequest reRunIncompleteBuild = new ReRunBuildRequest()
-					.buildId(buildId)
-					.reRunIncomplete(true);
+					.buildId(buildId).reRunIncomplete(true);
 			buildApi.reRunBuild(reRunIncompleteBuild);
 			fail("Expected ApiException due to reRunIncomplete: true");
 		} catch (ApiExceptionWithModel ex) {
 			assertEquals(ex.getCode(), 500);
-			assertEquals(
-					ex.getResponseModel().getMessage(),
+			assertEquals(ex.getResponseModel().getMessage(),
 					"No failed or cancelled jobs in build with ID " + buildId);
 		}
 
-		ReRunBuildRequest reRunBuild = new ReRunBuildRequest()
-				.buildId(buildId);
+		ReRunBuildRequest reRunBuild = new ReRunBuildRequest().buildId(buildId);
 		Build rebuild = buildApi.reRunBuild(reRunBuild);
 		testRebuild = rebuild;
 		assertEquals(rebuild.getCommitId(), origBuild.getCommitId());
@@ -962,10 +966,9 @@ public class ApiTest {
 	// This is not really a test, but is used for synchronization by other tests
 	@Test(dependsOnMethods = "reRunBuild", groups = "project")
 	public void waitForRebuild() throws ApiException, InterruptedException {
-		ProjectBuildResults projectBuild = this.waitForBuild(
-				testProject.getAccountName(),
-				testProject.getSlug(),
-				testRebuild.getVersion());
+		ProjectBuildResults projectBuild =
+				this.waitForBuild(testProject.getAccountName(),
+						testProject.getSlug(), testRebuild.getVersion());
 		Build build = projectBuild.getBuild();
 		testRebuild = build;
 		assertNotNull(build.getFinished());
@@ -978,8 +981,8 @@ public class ApiTest {
 		Status status = testRebuild.getStatus();
 		if (status != Status.SUCCESS) {
 			throw new AssertionError(String.format(
-					"Rebuild status %s != %s.  Check getBuildLog output.", status,
-					Status.SUCCESS));
+					"Rebuild status %s != %s.  Check getBuildLog output.",
+					status, Status.SUCCESS));
 		}
 	}
 
@@ -999,8 +1002,7 @@ public class ApiTest {
 		}
 
 		File retinaBadge = projectApi.getProjectStatusBadge(statusBadgeId,
-				false,
-				true, null, null, null);
+				false, true, null, null, null);
 		assertTrue(retinaBadge.exists());
 		long retinaSize = retinaBadge.length();
 		try {
@@ -1013,14 +1015,13 @@ public class ApiTest {
 
 		String uid = new BigInteger(128, new Random()).toString(36);
 		File svgBadge = projectApi.getProjectStatusBadge(statusBadgeId, true,
-				false,
-				uid, uid, uid);
+				false, uid, uid, uid);
 		assertTrue(svgBadge.exists());
 		try {
 			assertIsSvg(svgBadge.toPath());
 
-			String svgBadgeText = new String(
-					Files.readAllBytes(svgBadge.toPath()));
+			String svgBadgeText =
+					new String(Files.readAllBytes(svgBadge.toPath()));
 			assertTrue(svgBadgeText.contains(uid));
 		} finally {
 			svgBadge.delete();
@@ -1061,8 +1062,8 @@ public class ApiTest {
 		try {
 			assertIsSvg(svgBadge.toPath());
 
-			String svgBadgeText = new String(
-					Files.readAllBytes(svgBadge.toPath()));
+			String svgBadgeText =
+					new String(Files.readAllBytes(svgBadge.toPath()));
 			assertTrue(svgBadgeText.contains(uid));
 		} finally {
 			svgBadge.delete();
@@ -1076,8 +1077,8 @@ public class ApiTest {
 		try {
 			assertIsSvg(svgBranchBadge.toPath());
 
-			String svgBranchBadgeText = new String(
-					Files.readAllBytes(svgBranchBadge.toPath()));
+			String svgBranchBadgeText =
+					new String(Files.readAllBytes(svgBranchBadge.toPath()));
 			assertTrue(svgBranchBadgeText.contains(branchUid));
 		} finally {
 			svgBranchBadge.delete();
@@ -1150,11 +1151,11 @@ public class ApiTest {
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getBuildLog()
 			throws ApiException, FileNotFoundException, IOException {
-		File buildLog = buildApi
-				.getBuildLog(testBuild.getJobs().get(0).getJobId());
+		File buildLog =
+				buildApi.getBuildLog(testBuild.getJobs().get(0).getJobId());
 		assertTrue(buildLog.exists());
-		try (BufferedReader buildLogReader = new BufferedReader(
-				new FileReader(buildLog))) {
+		try (BufferedReader buildLogReader =
+				new BufferedReader(new FileReader(buildLog))) {
 			assertTrue(buildLogReader.readLine().contains("Build started"));
 		} finally {
 			buildLog.delete();
@@ -1165,8 +1166,8 @@ public class ApiTest {
 	public void getProjectLastBuild() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		ProjectBuildResults lastProjectBuild = projectApi
-				.getProjectLastBuild(accountName, slug);
+		ProjectBuildResults lastProjectBuild =
+				projectApi.getProjectLastBuild(accountName, slug);
 		Project project = lastProjectBuild.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build lastBuild = lastProjectBuild.getBuild();
@@ -1178,8 +1179,8 @@ public class ApiTest {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		String branch = testBuild.getBranch();
-		ProjectBuildResults branchBuild = projectApi
-				.getProjectLastBuildBranch(accountName, slug, branch);
+		ProjectBuildResults branchBuild =
+				projectApi.getProjectLastBuildBranch(accountName, slug, branch);
 		Project project = branchBuild.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build build = branchBuild.getBuild();
@@ -1190,8 +1191,8 @@ public class ApiTest {
 	public void getProjectHistory() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		ProjectHistory history = projectApi.getProjectHistory(accountName, slug,
-				10, null, null);
+		ProjectHistory history =
+				projectApi.getProjectHistory(accountName, slug, 10, null, null);
 
 		Project project = history.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
@@ -1204,8 +1205,8 @@ public class ApiTest {
 		assertModelEqualsExcluding(lastBuild, testBuild, buildExcludeJobs);
 	}
 
-	@Test(dependsOnMethods = { "addEnvironment", "addProject",
-			"successfulBuild" }, groups = { "environment", "project" })
+	@Test(dependsOnMethods = {"addEnvironment", "addProject",
+			"successfulBuild"}, groups = {"environment", "project"})
 	public void startDeployment() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -1231,15 +1232,15 @@ public class ApiTest {
 
 	// This is not really a test, but is used for synchronization by other tests
 	// Set priority > 0 so build can run during default priority tests
-	@Test(dependsOnMethods = "startDeployment", groups = { "environment",
-			"project" })
+	@Test(dependsOnMethods = "startDeployment",
+			groups = {"environment", "project"})
 	public void waitForDeployment() throws ApiException, InterruptedException {
 		Integer deploymentId = testDeployment.getDeploymentId();
 		Deployment deployment;
 		Status deploymentStatus;
 		while (true) {
-			ProjectDeployment projectDeployment = deploymentApi
-					.getDeployment(deploymentId);
+			ProjectDeployment projectDeployment =
+					deploymentApi.getDeployment(deploymentId);
 			deployment = projectDeployment.getDeployment();
 			deploymentStatus = deployment.getStatus();
 			if (deploymentStatus != Status.QUEUED
@@ -1256,12 +1257,12 @@ public class ApiTest {
 		assertNotNull(deployment.getFinished());
 	}
 
-	@Test(dependsOnMethods = "waitForDeployment", groups = { "environment",
-			"project" })
+	@Test(dependsOnMethods = "waitForDeployment",
+			groups = {"environment", "project"})
 	public void getEnvironmentDeployments() throws ApiException {
 		Integer testEnvId = testEnvironment.getDeploymentEnvironmentId();
-		DeploymentEnvironmentDeploymentsResults envDeps = environmentApi
-				.getEnvironmentDeployments(testEnvId);
+		DeploymentEnvironmentDeploymentsResults envDeps =
+				environmentApi.getEnvironmentDeployments(testEnvId);
 
 		List<EnvironmentDeploymentModel> deployments = envDeps.getDeployments();
 		assertEquals(deployments.size(), 1);
@@ -1270,8 +1271,8 @@ public class ApiTest {
 		assertModelAgrees(deployment.getProject(), testProject);
 	}
 
-	@Test(dependsOnMethods = "waitForDeployment", groups = { "environment",
-			"project" })
+	@Test(dependsOnMethods = "waitForDeployment",
+			groups = {"environment", "project"})
 	public void getProjectDeployments() throws ApiException {
 		String accountName = testProject.getAccountName();
 		String slug = testProject.getSlug();
@@ -1281,21 +1282,20 @@ public class ApiTest {
 		// Document observed changes and ignore timeout errors.
 		//
 		// Note: On 2018-06-05 started failing for recordsNumber < 11.
-		//       Use 12 as the website currently does.
+		// Use 12 as the website currently does.
 		// Note: On 2018-09-03 started failing for recordsNumber == 12.
-		//       Use 10 as the website currently does.
+		// Use 10 as the website currently does.
 		// Note: On 2018-09-20 started failing for recordsNumber == 10.
-		//       Use 11 as the website currently does.
+		// Use 11 as the website currently does.
 		// Note: On 2018-10-31 timeout errors.
-		//       Website using 10 again.
+		// Website using 10 again.
 		ProjectDeploymentsResults projectDeployments;
 		try {
 			projectDeployments =
 					projectApi.getProjectDeployments(accountName, slug, 11);
 		} catch (ApiExceptionWithModel ex) {
 			String errMsg = ex.getResponseModel().getMessage();
-			if (Pattern.matches("(?i)\\btime\\s*out\\b", errMsg))
-			{
+			if (Pattern.matches("(?i)\\btime\\s*out\\b", errMsg)) {
 				throw new SkipException("getProjectDeployments timeout", ex);
 			}
 
@@ -1304,11 +1304,11 @@ public class ApiTest {
 
 		Project project = projectDeployments.getProject();
 		assertModelAgreesExcluding(project, testProject, projectExcludes);
-		List<ProjectDeploymentModel> environmentDeployments = projectDeployments
-				.getDeployments();
+		List<ProjectDeploymentModel> environmentDeployments =
+				projectDeployments.getDeployments();
 		assertEquals(environmentDeployments.size(), 1);
-		ProjectDeploymentModel environmentDeployment = environmentDeployments
-				.get(0);
+		ProjectDeploymentModel environmentDeployment =
+				environmentDeployments.get(0);
 		assertModelAgrees(environmentDeployment, testDeployment);
 	}
 
@@ -1321,6 +1321,7 @@ public class ApiTest {
 		apiTest.cleanupOldTestRoles();
 	}
 }
+
 
 class RoleNameComparator implements Comparator<Role> {
 	@Override

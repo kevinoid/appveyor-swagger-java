@@ -27,7 +27,7 @@ public class ComparisonFailure extends AssertionError {
 	 * @param explanation Optional message explaining the failure.
 	 * @param expected Expected value compared against.
 	 * @param comparison How {@code expected} should compare to {@code actual}.
-	 * Usually an operator. (e.g. {@code "=="})
+	 *        Usually an operator. (e.g. {@code "=="})
 	 * @param actual Actual value.
 	 */
 	public ComparisonFailure(String explanation, Object expected,

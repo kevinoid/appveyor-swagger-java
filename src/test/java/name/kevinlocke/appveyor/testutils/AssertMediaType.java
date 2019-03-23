@@ -63,8 +63,8 @@ public class AssertMediaType {
 
 	public static void assertMediaType(Path path, String expectedType)
 			throws IOException {
-		try (BufferedInputStream bis = new BufferedInputStream(
-				Files.newInputStream(path))) {
+		try (BufferedInputStream bis =
+				new BufferedInputStream(Files.newInputStream(path))) {
 			assertMediaType(bis, path, expectedType);
 		}
 	}
@@ -84,8 +84,8 @@ public class AssertMediaType {
 			char[] searchBuf = new char[512];
 			is.mark(searchBuf.length);
 			// Need to use standard single-byte charset compatible with ASCII.
-			InputStreamReader reader = new InputStreamReader(is,
-					StandardCharsets.ISO_8859_1);
+			InputStreamReader reader =
+					new InputStreamReader(is, StandardCharsets.ISO_8859_1);
 			int nRead;
 			try {
 				nRead = reader.read(searchBuf);
@@ -104,13 +104,12 @@ public class AssertMediaType {
 	}
 
 	public static void assertIsSvg(Path path) throws IOException {
-		try (BufferedInputStream bis = new BufferedInputStream(
-				Files.newInputStream(path))) {
+		try (BufferedInputStream bis =
+				new BufferedInputStream(Files.newInputStream(path))) {
 			assertIsSvg(bis, path);
 		}
 	}
 
 	// Prevent direct instantiation
-	protected AssertMediaType() {
-	}
+	protected AssertMediaType() {}
 }

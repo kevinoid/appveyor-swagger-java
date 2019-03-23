@@ -14,10 +14,10 @@ import com.google.gson.stream.JsonWriter;
  */
 public class DateTypeAdapter extends TypeAdapter<Date> {
 
-	private final SimpleDateFormat dateFormat = new SimpleDateFormat(
-			"yyyy-MM-dd");
-	private final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+	private final SimpleDateFormat dateFormat =
+			new SimpleDateFormat("yyyy-MM-dd");
+	private final SimpleDateFormat dateTimeFormat =
+			new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
 	@Override
 	public void write(JsonWriter out, Date date) throws IOException {

@@ -40,6 +40,5 @@ public class Resources {
 	}
 
 	// Prevent instantiation
-	private Resources() {
-	}
+	private Resources() {}
 }

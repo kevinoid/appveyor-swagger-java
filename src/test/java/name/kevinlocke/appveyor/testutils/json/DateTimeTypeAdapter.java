@@ -15,10 +15,10 @@ import com.google.gson.stream.JsonWriter;
  */
 public class DateTimeTypeAdapter extends TypeAdapter<DateTime> {
 
-	private final DateTimeFormatter parseFormatter = ISODateTimeFormat
-			.dateOptionalTimeParser();
-	private final DateTimeFormatter printFormatter = ISODateTimeFormat
-			.dateTime();
+	private final DateTimeFormatter parseFormatter =
+			ISODateTimeFormat.dateOptionalTimeParser();
+	private final DateTimeFormatter printFormatter =
+			ISODateTimeFormat.dateTime();
 
 	@Override
 	public void write(JsonWriter out, DateTime date) throws IOException {

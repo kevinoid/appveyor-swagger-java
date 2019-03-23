@@ -36,8 +36,8 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 	 * Pattern to match an ISO 8601 datetime with microsecond (or higher)
 	 * precision as a JSON string value.
 	 */
-	protected static final Pattern ISO_DATE_TIME_MICRO_JSON = Pattern
-			.compile("\"(?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})"
+	protected static final Pattern ISO_DATE_TIME_MICRO_JSON =
+			Pattern.compile("\"(?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})"
 					+ "T(?<time>[0-9]{2}:[0-9]{2}:[0-9]{2})"
 					+ "\\.(?<msec>[0-9]{3})(?<unsec>[0-9]+)"
 					+ "(?<tz>Z|(?:\\+|-)[0-9]{2}:[0-9]{2})\"");
@@ -70,8 +70,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 	 *
 	 * Code based on HttpLoggingInterceptor.
 	 *
-	 * @param responseBody
-	 *            Response body to read.
+	 * @param responseBody Response body to read.
 	 * @return Response body as a String.
 	 * @throws IOException
 	 */
@@ -99,15 +98,15 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		// Times with more than millisecond precision do not validate
 		// https://github.com/daveclayton/json-schema-validator/issues/166
 		Matcher dateMatcher = ISO_DATE_TIME_MICRO_JSON.matcher(responseBody);
-		String dateFixed = dateMatcher
-				.replaceAll("\"${date}T${time}.${msec}${tz}\"");
+		String dateFixed =
+				dateMatcher.replaceAll("\"${date}T${time}.${msec}${tz}\"");
 		return dateFixed;
 	}
 
 	protected static com.atlassian.oai.validator.model.Response okhttpToValidatorResponse(
 			Response response) throws IOException {
-		SimpleResponse.Builder responseBuilder = new SimpleResponse.Builder(
-				response.code());
+		SimpleResponse.Builder responseBuilder =
+				new SimpleResponse.Builder(response.code());
 
 		// It's difficult to determine if the response body is actually empty.
 		// It returns a ResponseBody with .contentLength() == -1.
@@ -128,8 +127,8 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		HttpUrl requestUrl = request.httpUrl();
 		String requestPath = requestUrl.encodedPath();
 		RequestBody requestBody = request.body();
-		SimpleRequest.Builder requestBuilder = new SimpleRequest.Builder(
-				requestMethod, requestPath);
+		SimpleRequest.Builder requestBuilder =
+				new SimpleRequest.Builder(requestMethod, requestPath);
 		if (requestBody != null) {
 			String requestBodyString = requestBodyToString(requestBody);
 			requestBuilder = requestBuilder.withBody(requestBodyString);
@@ -159,9 +158,9 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 				.withLevel(SchemaValidator.ADDITIONAL_PROPERTIES_KEY,
 						ValidationReport.Level.IGNORE)
 				.build();
-		validator = OpenApiInteractionValidator
-				.createFor(swaggerJsonUrlOrPayload)
-				.withLevelResolver(levelResolver).build();
+		validator =
+				OpenApiInteractionValidator.createFor(swaggerJsonUrlOrPayload)
+						.withLevelResolver(levelResolver).build();
 	}
 
 	/*
@@ -177,11 +176,11 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		Response okResponse = chain.proceed(okRequest);
 
 		RequestBody requestBody = okRequest.body();
-		MediaType requestType = requestBody != null ? requestBody.contentType()
-				: null;
+		MediaType requestType =
+				requestBody != null ? requestBody.contentType() : null;
 		ResponseBody responseBody = okResponse.body();
-		MediaType responseType = responseBody != null
-				? responseBody.contentType() : null;
+		MediaType responseType =
+				responseBody != null ? responseBody.contentType() : null;
 		if ((requestType != null && !isJson(requestType))
 				|| (responseType != null && !isJson(responseType))) {
 			// Don't validate non-JSON requests or responses since their
@@ -190,10 +189,10 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 			return okResponse;
 		}
 
-		com.atlassian.oai.validator.model.Request vRequest = okhttpToValidatorRequest(
-				okRequest);
-		com.atlassian.oai.validator.model.Response vResponse = okhttpToValidatorResponse(
-				okResponse);
+		com.atlassian.oai.validator.model.Request vRequest =
+				okhttpToValidatorRequest(okRequest);
+		com.atlassian.oai.validator.model.Response vResponse =
+				okhttpToValidatorResponse(okResponse);
 
 		ValidationReport report = validator.validate(vRequest, vResponse);
 		List<Message> messages = report.getMessages();

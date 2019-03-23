@@ -33,6 +33,5 @@ public final class IOUtils {
 				.toString(charsetName);
 	}
 
-	private IOUtils() {
-	}
+	private IOUtils() {}
 }

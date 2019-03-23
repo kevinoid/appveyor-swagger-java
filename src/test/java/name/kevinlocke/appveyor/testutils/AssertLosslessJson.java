@@ -43,10 +43,11 @@ public class AssertLosslessJson extends JSON {
 	 * Checks if two JSON values are dates which are equal to the millisecond.
 	 * This is used to accommodate differences due to date-time formatting and
 	 * the limited precision of the Java7 time types.
+	 *
 	 * @param expected Expected JSON value.
 	 * @param actual Actual JSON value.
 	 * @return {@code true} if {@code expected} and {@code actual} are date-time
-	 * values which are equal to the millisecond.
+	 *         values which are equal to the millisecond.
 	 */
 	protected static boolean isJsonDateEquals(JsonElement expected,
 			JsonElement actual) {
@@ -78,8 +79,8 @@ public class AssertLosslessJson extends JSON {
 			DateTime expectedInstant = DateTime.parse(expectedValue);
 			DateTime actualInstant = DateTime.parse(actualValue);
 			// Require difference of at-most 1 millisecond
-			long millis = expectedInstant.getMillis()
-					- actualInstant.getMillis();
+			long millis =
+					expectedInstant.getMillis() - actualInstant.getMillis();
 			return Math.abs(millis) <= 1;
 		} catch (IllegalArgumentException e) {
 			return false;
@@ -144,7 +145,7 @@ public class AssertLosslessJson extends JSON {
 	 * @param expected The expected JSON element.
 	 * @param actual The actual JSON element.
 	 * @throws AssertionError If {@code actual} is not equal to
-	 * {@code expected}.
+	 *         {@code expected}.
 	 */
 	public static void assertJsonEquals(JsonElement expected,
 			JsonElement actual) throws AssertionError {
