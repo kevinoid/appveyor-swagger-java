@@ -79,6 +79,7 @@
     <gson-fire-version>1.8.3</gson-fire-version>
     <joda-time-version>2.10.1</joda-time-version>
     <jsonassert-version>1.5.0</jsonassert-version>
+    <maven-compiler-plugin-version>3.8.0</maven-compiler-plugin-version>
     <maven-enforcer-plugin-version>1.4.1</maven-enforcer-plugin-version>
     <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
     <maven-javadoc-plugin-version>3.1.0</maven-javadoc-plugin-version>
@@ -345,13 +346,75 @@
             </goals>
             <configuration>
               <sources>
-                <source>${project.build.directory}/generated-sources/swagger/main/java</source>
+                <source>${project.build.directory}/generated-sources/swagger/src/main/java</source>
               </sources>
             </configuration>
           </execution>
         </executions>
       </plugin>
       -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin-version}</version>
+        <!--
+          Enable compiler warnings:
+          https://stackoverflow.com/a/33823355
+          https://maven.apache.org/plugins/maven-compiler-plugin/compile-mojo.html
+          https://maven.apache.org/plugins/maven-compiler-plugin/testCompile-mojo.html
+          https://github.com/apache/maven-compiler-plugin/blob/master/src/main/java/org/apache/maven/plugin/compiler/AbstractCompilerMojo.java
+
+          Use separate execution without warnings for generated-sources:
+          https://stackoverflow.com/a/19913647
+          https://maven.apache.org/guides/mini/guide-default-execution-ids.html
+
+          Note:
+          includes/excludes (testIncludes/testExcludes for default-testCompile)
+          are applied relative to compileSourceRoots, so need to modify
+          compileSourceRoots for each execution.
+          FIXME: If other plugins add generated sources, they won't be compiled
+          until their compileSourceRoots are added to one of the executions.
+        -->
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compileSourceRoots>
+                <compileSourceRoot>${project.build.directory}/generated-sources/swagger/src/main/java</compileSourceRoot>
+              </compileSourceRoots>
+              <showWarnings>false</showWarnings>
+            </configuration>
+          </execution>
+          <execution>
+            <id>compile-with-warnings</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <compileSourceRoots>
+                <compileSourceRoot>${project.build.sourceDirectory}</compileSourceRoot>
+              </compileSourceRoots>
+              <showWarnings>true</showWarnings>
+              <compilerArgs>
+                <arg>-Xlint:all</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-testCompile</id>
+            <configuration>
+              <compileSourceRoots>
+                <compileSourceRoot>${project.build.testSourceDirectory}</compileSourceRoot>
+              </compileSourceRoots>
+              <showWarnings>true</showWarnings>
+              <compilerArgs>
+                <arg>-Xlint:all</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
