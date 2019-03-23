@@ -8,7 +8,7 @@ install:
   - java -version
   - mvn --version
 build_script:
-  - mvn --batch-mode -DskipTests package
+  - mvn --batch-mode -DskipTests -Dmaven.compiler.failOnWarning=true package
 test_script:
   - mvn --batch-mode test verify
 cache:
