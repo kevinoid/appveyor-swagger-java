@@ -364,7 +364,7 @@
             </property>
           </properties>
           <suiteXmlFiles>
-            <suiteXmlFile>${basedir}/src/test/resources/testng.xml</suiteXmlFile>
+            <suiteXmlFile>${project.basedir}/src/test/resources/testng.xml</suiteXmlFile>
           </suiteXmlFiles>
         </configuration>
       </plugin>
@@ -381,7 +381,7 @@
               <goal>copy</goal>
             </goals>
             <configuration>
-              <sourceFile>${basedir}/README.md</sourceFile>
+              <sourceFile>${project.basedir}/README.md</sourceFile>
               <destinationFile>${project.build.directory}/generated-site/markdown/index.md</destinationFile>
             </configuration>
           </execution>
