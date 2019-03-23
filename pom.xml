@@ -283,6 +283,15 @@
         <configuration>
           <configFile>${project.basedir}/.eclipse-formatter.xml</configFile>
         </configuration>
+        <executions>
+          <execution>
+            <id>test-format</id>
+            <phase>process-test-sources</phase>
+            <goals>
+              <goal>validate</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>com.googlecode.maven-download-plugin</groupId>
