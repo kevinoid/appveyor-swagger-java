@@ -1,5 +1,6 @@
 package name.kevinlocke.appveyor.testutils;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -118,13 +119,21 @@ public class AssertModels {
 			gson = defaultGson;
 		}
 
-		JsonOrgTreeWriter actualWriter = new JsonOrgTreeWriter();
-		gson.toJson(actual, actual.getClass(), actualWriter);
-		Object actualElement = actualWriter.get();
+		Object actualElement;
+		try (JsonOrgTreeWriter actualWriter = new JsonOrgTreeWriter()) {
+			gson.toJson(actual, actual.getClass(), actualWriter);
+			actualElement = actualWriter.get();
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
 
-		JsonOrgTreeWriter expectedWriter = new JsonOrgTreeWriter();
-		gson.toJson(expected, expected.getClass(), expectedWriter);
-		Object expectedElement = expectedWriter.get();
+		Object expectedElement;
+		try (JsonOrgTreeWriter expectedWriter = new JsonOrgTreeWriter()) {
+			gson.toJson(expected, expected.getClass(), expectedWriter);
+			expectedElement = expectedWriter.get();
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
 
 		try {
 			if (actualElement instanceof JSONObject
