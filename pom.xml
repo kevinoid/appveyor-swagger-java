@@ -308,7 +308,7 @@
               <goal>wget</goal>
             </goals>
             <configuration>
-              <url>https://github.com/kevinoid/appveyor-swagger/raw/${appveyor-swagger-version}/swagger.yaml</url>
+              <url>https://github.com/kevinoid/appveyor-swagger/raw/${appveyor-swagger-version}/swagger.json</url>
               <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
               <skipCache>true</skipCache>
             </configuration>
@@ -325,7 +325,7 @@
               <goal>generate</goal>
             </goals>
             <configuration>
-              <inputSpec>${project.build.directory}/generated-resources/swagger.yaml</inputSpec>
+              <inputSpec>${project.build.directory}/generated-resources/swagger.json</inputSpec>
               <invokerPackage>${project.groupId}</invokerPackage>
               <apiPackage>${project.groupId}.api</apiPackage>
               <modelPackage>${project.groupId}.model</modelPackage>
@@ -589,9 +589,6 @@
     <resources>
       <resource>
         <directory>${project.build.directory}/generated-resources</directory>
-        <includes>
-          <include>**/*.yaml</include>
-        </includes>
       </resource>
     </resources>
   </build>

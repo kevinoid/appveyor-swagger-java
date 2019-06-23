@@ -124,7 +124,7 @@ public final class TestApiClient {
 
 		List<Interceptor> interceptors = httpClient.interceptors();
 
-		URL swaggerUrl = TestApiClient.class.getResource("/swagger.yaml");
+		URL swaggerUrl = TestApiClient.class.getResource("/swagger.json");
 		String swaggerUrlOrContent = baseUrl == origBaseUrl
 				? swaggerUrl.toString()
 				: readModifiedSwaggerSpec(swaggerUrl, origBaseUrl, baseUrl);
@@ -155,7 +155,7 @@ public final class TestApiClient {
 			swaggerContent = IOUtils.readAllAsString(swaggerStream,
 					StandardCharsets.UTF_8.name());
 		} catch (IOException ex) {
-			throw new RuntimeException("Error reading swagger.yaml", ex);
+			throw new RuntimeException("Error reading swagger.json", ex);
 		}
 
 		String origBasePath, newBasePath;
@@ -166,19 +166,25 @@ public final class TestApiClient {
 			throw new RuntimeException("Bad base URL", ex);
 		}
 
-		// FIXME: Should parse YAML, edit, then re-serialize. Non-trivial.
+		// FIXME: Should parse JSON/YAML, edit, then re-serialize. Non-trivial.
 		// Swagger uses Jackson with mapping to non-serializable classes.
 		// Simple string replacement is good enough for now.
-		Pattern basePathPattern = Pattern.compile("^(basePath:\\s*[\"']?)"
-				+ Pattern.quote(origBasePath) + "([\"']?\\s*)$",
-				Pattern.MULTILINE);
+		Pattern basePathPattern =
+				Pattern.compile("([\"']?basePath[\"']?:\\s*[\"']?)"
+						+ Pattern.quote(origBasePath) + "([\"']?)");
 		Matcher matcher = basePathPattern.matcher(swaggerContent);
 		if (!matcher.find()) {
-			throw new RuntimeException("Can't find basePath in swagger.yaml");
+			throw new RuntimeException("Can't find basePath in " + swaggerUrl);
 		}
-		return swaggerContent.substring(0, matcher.start()) + matcher.group(1)
-				+ newBasePath + matcher.group(2)
+		String modifiedSpec = swaggerContent.substring(0, matcher.start())
+				+ matcher.group(1) + newBasePath + matcher.group(2)
 				+ swaggerContent.substring(matcher.end());
+		// Sanity check. If there are multiple basePath, naive search/replace
+		// may make unintended changes.
+		if (matcher.find()) {
+			throw new RuntimeException("Multiple basePath in " + swaggerUrl);
+		}
+		return modifiedSpec;
 	}
 
 	// Prevent instantiation
