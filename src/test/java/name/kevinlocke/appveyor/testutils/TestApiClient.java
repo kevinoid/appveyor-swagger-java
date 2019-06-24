@@ -125,6 +125,9 @@ public final class TestApiClient {
 		List<Interceptor> interceptors = httpClient.interceptors();
 
 		URL swaggerUrl = TestApiClient.class.getResource("/swagger.json");
+		if (swaggerUrl == null) {
+			throw new RuntimeException("Unable to get swagger.json resource");
+		}
 		String swaggerUrlOrContent = baseUrl == origBaseUrl
 				? swaggerUrl.toString()
 				: readModifiedSwaggerSpec(swaggerUrl, origBaseUrl, baseUrl);
