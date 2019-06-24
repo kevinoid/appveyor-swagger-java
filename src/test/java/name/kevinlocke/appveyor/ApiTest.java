@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,8 +37,6 @@ import java.util.regex.Pattern;
 import org.testng.SkipException;
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.Test;
-
-import com.migcomponents.migbase64.Base64;
 
 import name.kevinlocke.appveyor.api.BuildApi;
 import name.kevinlocke.appveyor.api.CollaboratorApi;
@@ -120,9 +119,7 @@ public class ApiTest {
 	protected static final String randStr() {
 		byte[] randBytes = new byte[6];
 		ThreadLocalRandom.current().nextBytes(randBytes);
-		String randStr = Base64.encodeToString(randBytes, false);
-		String randUrlSafe = randStr.replace('+', '-').replace('/', '_');
-		return randUrlSafe;
+		return Base64.getUrlEncoder().encodeToString(randBytes);
 	}
 
 	public static final String TEST_BADGE_PROVIDER =
