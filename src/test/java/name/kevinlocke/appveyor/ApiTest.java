@@ -9,6 +9,7 @@ import static name.kevinlocke.appveyor.testutils.AssertModels.assertModelEqualsE
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -64,6 +65,7 @@ import name.kevinlocke.appveyor.model.DeploymentProviderType;
 import name.kevinlocke.appveyor.model.DeploymentStartRequest;
 import name.kevinlocke.appveyor.model.EncryptRequest;
 import name.kevinlocke.appveyor.model.EnvironmentDeploymentModel;
+import name.kevinlocke.appveyor.model.InviteUserRequest;
 import name.kevinlocke.appveyor.model.NuGetFeed;
 import name.kevinlocke.appveyor.model.Project;
 import name.kevinlocke.appveyor.model.ProjectAddition;
@@ -92,6 +94,7 @@ import name.kevinlocke.appveyor.model.TestMode;
 import name.kevinlocke.appveyor.model.UserAccount;
 import name.kevinlocke.appveyor.model.UserAccountRolesResults;
 import name.kevinlocke.appveyor.model.UserAddition;
+import name.kevinlocke.appveyor.model.UserInvitationModel;
 import name.kevinlocke.appveyor.testutils.Resources;
 import name.kevinlocke.appveyor.testutils.TestApiClient;
 import name.kevinlocke.appveyor.testutils.json.FieldNameExclusionStrategy;
@@ -193,6 +196,7 @@ public class ApiTest {
 	protected volatile ArtifactModel testArtifactPath;
 	protected volatile Build testBuild;
 	protected volatile UserAccount testCollaborator;
+	protected volatile UserInvitationModel testInvitation;
 	protected volatile Deployment testDeployment;
 	protected volatile DeploymentEnvironmentWithSettings testEnvironment;
 	protected volatile Project testProject;
@@ -404,6 +408,104 @@ public class ApiTest {
 		assertModelAgreesExcluding(updatedRole, testRole, excludeUpdated);
 	}
 
+
+	@AfterGroups(groups = "user", alwaysRun = true)
+	public void cleanupTestInvitation() throws ApiException {
+		if (testInvitation != null) {
+			collaboratorApi.deleteCollaborator(testCollaborator.getUserId());
+			testCollaborator = null;
+		}
+	}
+
+	public void cleanupOldTestInvitations() throws ApiException {
+		for (UserInvitationModel invitation : userApi.getUserInvitations()) {
+			if (invitation.getEmail().equals(TEST_COLLABORATOR_EMAIL)) {
+				userApi.cancelUserInvitation(invitation.getUserInvitationId());
+			}
+		}
+	}
+
+	protected void inviteTestUser() throws ApiException {
+		InviteUserRequest inviteUserRequest = new InviteUserRequest();
+		inviteUserRequest.setEmail(TEST_COLLABORATOR_EMAIL);
+		int roleId =
+				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
+		inviteUserRequest.setRoleId(roleId);
+		userApi.inviteUser(inviteUserRequest);
+	}
+
+	@Test(groups = "user")
+	public void inviteUser() throws ApiException {
+		try {
+			inviteTestUser();
+		} catch (ApiException e) {
+			if (e.getResponseBody().indexOf("already") >= 0) {
+				cleanupOldTestInvitations();
+				inviteTestUser();
+			} else {
+				throw e;
+			}
+		}
+	}
+
+	@Test(dependsOnMethods = "inviteUser", groups = "user")
+	public void inviteUserDuplicate() {
+		try {
+			inviteTestUser();
+			fail("Duplicate collaborator added?");
+		} catch (ApiException e) {
+			assertTrue(e.getResponseBody().indexOf("already") >= 0);
+		}
+	}
+
+	protected UserInvitationModel getUserInvitationByEmail(
+			String invitationEmail) throws ApiException {
+		List<UserInvitationModel> invitations = userApi.getUserInvitations();
+		for (UserInvitationModel invitation : invitations) {
+			if (invitation.getEmail().equals(invitationEmail)) {
+				return invitation;
+			}
+		}
+		return null;
+	}
+
+	@Test(dependsOnMethods = "inviteUserDuplicate", groups = "user")
+	public void cancelUserInvitation() throws ApiException {
+		UserInvitationModel invitation =
+				getUserInvitationByEmail(TEST_COLLABORATOR_EMAIL);
+		assertNotNull(invitation, "Invitation not found");
+
+		userApi.cancelUserInvitation(invitation.getUserInvitationId());
+
+		UserInvitationModel canceledInvitation =
+				getUserInvitationByEmail(TEST_COLLABORATOR_EMAIL);
+		assertNull(canceledInvitation, "Canceled invitation found!?");
+	}
+
+	@Test(dependsOnMethods = "cancelUserInvitation", groups = "user")
+	public void reinviteUser() throws ApiException {
+		inviteTestUser();
+	}
+
+	@Test(dependsOnMethods = "reinviteUser", groups = "user")
+	public void getUserInvitations() throws ApiException {
+		UserInvitationModel invitation =
+				getUserInvitationByEmail(TEST_COLLABORATOR_EMAIL);
+		assertNotNull(invitation, "Invitation not found");
+		testInvitation = invitation;
+		assertEquals(invitation.getRoleName(), TEST_COLLABORATOR_ROLE_NAME);
+		Integer roleId =
+				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
+		assertEquals(invitation.getRoleId(), roleId);
+	}
+
+	@Test(dependsOnMethods = "getUserInvitations", groups = "user")
+	public static void joinAccount() {
+		// FIXME: Need to call with TEST_COLLABORATOR credentials, which
+		// requires v2 (aka user-level) API access.
+		throw new SkipException("Not Implemented");
+	}
+
 	@AfterGroups(groups = "user", alwaysRun = true)
 	public void cleanupTestUser() throws ApiException {
 		if (testUser != null) {
@@ -455,7 +557,7 @@ public class ApiTest {
 		return null;
 	}
 
-	@Test(dependsOnMethods = "addUser", groups = "user")
+	@Test(dependsOnMethods = "joinAccount", groups = "user")
 	public void getUsers() throws ApiException {
 		UserAccount user = getUserByEmail(TEST_USER_EMAIL);
 		testUser = user;
@@ -548,7 +650,7 @@ public class ApiTest {
 		return null;
 	}
 
-	@Test(dependsOnMethods = "addCollaborator", groups = "collaborator")
+	@Test(dependsOnMethods = "joinAccount", groups = "collaborator")
 	public void getCollaborators() throws ApiException {
 		UserAccount collaborator =
 				getCollaboratorByEmail(TEST_COLLABORATOR_EMAIL);
@@ -606,7 +708,8 @@ public class ApiTest {
 		DeploymentEnvironmentSettings settings =
 				new DeploymentEnvironmentSettings();
 		settings.addProviderSettingsItem(new StoredNameValue().name("url")
-				.value(new StoredValue().value("http://example.com")));
+				.value(new StoredValue().value("http://example.com")))
+				.environmentVariables(Collections.emptyList());
 		DeploymentEnvironmentAddition environmentAddition =
 				new DeploymentEnvironmentAddition().name(TEST_ENVIRONMENT_NAME)
 						.provider(DeploymentProviderType.WEBHOOK)
@@ -1314,6 +1417,7 @@ public class ApiTest {
 		apiTest.cleanupOldTestProjects();
 		apiTest.cleanupOldTestEnvironments();
 		apiTest.cleanupOldTestCollaborators();
+		apiTest.cleanupOldTestInvitations();
 		apiTest.cleanupOldTestUsers();
 		apiTest.cleanupOldTestRoles();
 	}
