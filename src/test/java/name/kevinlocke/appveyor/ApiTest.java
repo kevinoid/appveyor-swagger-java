@@ -50,7 +50,6 @@ import name.kevinlocke.appveyor.model.ArtifactModel;
 import name.kevinlocke.appveyor.model.Build;
 import name.kevinlocke.appveyor.model.BuildMode;
 import name.kevinlocke.appveyor.model.BuildStartRequest;
-import name.kevinlocke.appveyor.model.CollaboratorAddition;
 import name.kevinlocke.appveyor.model.CollaboratorUpdate;
 import name.kevinlocke.appveyor.model.Deployment;
 import name.kevinlocke.appveyor.model.DeploymentEnvironment;
@@ -93,7 +92,6 @@ import name.kevinlocke.appveyor.model.StoredValue;
 import name.kevinlocke.appveyor.model.TestMode;
 import name.kevinlocke.appveyor.model.UserAccount;
 import name.kevinlocke.appveyor.model.UserAccountRolesResults;
-import name.kevinlocke.appveyor.model.UserAddition;
 import name.kevinlocke.appveyor.model.UserInvitationModel;
 import name.kevinlocke.appveyor.testutils.Resources;
 import name.kevinlocke.appveyor.testutils.TestApiClient;
@@ -522,31 +520,6 @@ public class ApiTest {
 		}
 	}
 
-	@Test(groups = "user")
-	public void addUser() throws ApiException {
-		UserAddition userAddition = new UserAddition();
-		userAddition.setFullName(TEST_USER_NAME);
-		userAddition.setEmail(TEST_USER_EMAIL);
-		Role role = getSystemRoleByName(TEST_USER_ROLE_NAME);
-		userAddition.setRoleId(role.getRoleId());
-		userApi.addUser(userAddition);
-	}
-
-	@Test(dependsOnMethods = "addUser", groups = "user")
-	public void addUserDuplicate() throws ApiException {
-		UserAddition userAddition = new UserAddition();
-		userAddition.setFullName(TEST_USER_NAME);
-		userAddition.setEmail(TEST_USER_EMAIL);
-		Role role = getSystemRoleByName(TEST_USER_ROLE_NAME);
-		userAddition.setRoleId(role.getRoleId());
-		try {
-			userApi.addUser(userAddition);
-			fail("Duplicate user added?");
-		} catch (ApiException e) {
-			assertTrue(e.getResponseBody().indexOf("already exists") >= 0);
-		}
-	}
-
 	protected UserAccount getUserByEmail(String email) throws ApiException {
 		List<UserAccount> users = userApi.getUsers();
 		for (UserAccount user : users) {
@@ -601,41 +574,6 @@ public class ApiTest {
 			if (user.getEmail().equals(TEST_COLLABORATOR_EMAIL)) {
 				collaboratorApi.deleteCollaborator(user.getUserId());
 			}
-		}
-	}
-
-	@Test(groups = "collaborator")
-	public void addCollaborator() throws ApiException {
-		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
-		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		int roleId =
-				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
-		collaboratorAddition.setRoleId(roleId);
-
-		try {
-			collaboratorApi.addCollaborator(collaboratorAddition);
-		} catch (ApiException e) {
-			if (e.getResponseBody().indexOf("already") >= 0) {
-				cleanupOldTestCollaborators();
-				collaboratorApi.addCollaborator(collaboratorAddition);
-			} else {
-				throw e;
-			}
-		}
-	}
-
-	@Test(dependsOnMethods = "addCollaborator", groups = "collaborator")
-	public void addCollaboratorDuplicate() throws ApiException {
-		CollaboratorAddition collaboratorAddition = new CollaboratorAddition();
-		collaboratorAddition.setEmail(TEST_COLLABORATOR_EMAIL);
-		int roleId =
-				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
-		collaboratorAddition.setRoleId(roleId);
-		try {
-			collaboratorApi.addCollaborator(collaboratorAddition);
-			fail("Duplicate collaborator added?");
-		} catch (ApiException e) {
-			assertTrue(e.getResponseBody().indexOf("already") >= 0);
 		}
 	}
 
