@@ -293,17 +293,6 @@ public class ApiTest {
 	}
 
 	@Test(dependsOnMethods = "addRole", groups = "role")
-	public void addRoleDuplicate() {
-		RoleAddition roleAddition = new RoleAddition().name(TEST_ROLE_NAME);
-		try {
-			roleApi.addRole(roleAddition);
-			fail("Duplicate role added?");
-		} catch (ApiException e) {
-			assertTrue(e.getResponseBody().indexOf("already exists") >= 0);
-		}
-	}
-
-	@Test(dependsOnMethods = "addRole", groups = "role")
 	public void getRole() throws ApiException {
 		RoleWithGroups gotRole = roleApi.getRole(testRole.getRoleId());
 		assertModelEqualsExcluding(gotRole, testRole, excludeUpdated);
