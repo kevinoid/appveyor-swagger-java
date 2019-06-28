@@ -644,6 +644,12 @@ public class ApiTest {
 		DeploymentEnvironmentWithSettings environment =
 				environmentApi.addEnvironment(environmentAddition);
 		normalizeSecurity(environment);
+		// updateEnvironment fails with null projects
+		// getEnvironments assertion expects empty projects.
+		// Set here for consistency.
+		if (environment.getProjects() == null) {
+			environment.setProjects(Collections.emptyList());
+		}
 		testEnvironment = environment;
 		assertEquals(environment.getName(), TEST_ENVIRONMENT_NAME);
 	}
