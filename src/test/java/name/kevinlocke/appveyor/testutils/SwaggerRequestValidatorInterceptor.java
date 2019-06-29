@@ -15,14 +15,14 @@ import com.atlassian.oai.validator.report.LevelResolver;
 import com.atlassian.oai.validator.report.ValidationReport;
 import com.atlassian.oai.validator.report.ValidationReport.Message;
 import com.atlassian.oai.validator.schema.SchemaValidator;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
-import com.squareup.okhttp.internal.http.HttpEngine;
+import okhttp3.HttpUrl;
+import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okhttp3.internal.http.HttpHeaders;
 
 import okio.Buffer;
 import okio.BufferedSource;
@@ -111,7 +111,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		// It's difficult to determine if the response body is actually empty.
 		// It returns a ResponseBody with .contentLength() == -1.
 		// Use same method as HttpLoggingInterceptor
-		if (HttpEngine.hasBody(response)) {
+		if (HttpHeaders.hasBody(response)) {
 			ResponseBody responseBody = response.body();
 			String responseBodyString = responseBodyToString(responseBody);
 			responseBodyString = responseBodyFixup(responseBodyString);
@@ -124,7 +124,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 	protected static com.atlassian.oai.validator.model.Request okhttpToValidatorRequest(
 			Request request) throws IOException {
 		Method requestMethod = Method.valueOf(request.method());
-		HttpUrl requestUrl = request.httpUrl();
+		HttpUrl requestUrl = request.url();
 		String requestPath = requestUrl.encodedPath();
 		RequestBody requestBody = request.body();
 		SimpleRequest.Builder requestBuilder =
@@ -167,7 +167,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * com.squareup.okhttp.Interceptor#intercept(com.squareup.okhttp.Interceptor
+	 * okhttp3.Interceptor#intercept(okhttp3.Interceptor
 	 * .Chain)
 	 */
 	@Override

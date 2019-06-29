@@ -92,9 +92,9 @@
     <maven-source-plugin-version>3.0.1</maven-source-plugin-version>
     <maven-surefire-plugin-version>2.22.1</maven-surefire-plugin-version>
     <nexus-staging-maven-plugin-version>1.6.8</nexus-staging-maven-plugin-version>
-    <okhttp-version>2.7.5</okhttp-version>
+    <okhttp-version>3.14.2</okhttp-version>
+    <openapi-generator-maven-plugin-version>4.0.2</openapi-generator-maven-plugin-version>
     <swagger-annotations-version>1.5.22</swagger-annotations-version>
-    <swagger-codegen-maven-plugin-version>2.4.2</swagger-codegen-maven-plugin-version>
     <swagger-request-validator-version>2.4.1</swagger-request-validator-version>
     <!-- After updating testng, check JDK 7 support and enable CI testing.
          See https://github.com/cbeust/testng/commit/132a807 -->
@@ -132,7 +132,7 @@
             <version>${maven-javadoc-plugin-version}</version>
             <configuration>
               <links>
-                <link>https://square.github.io/okhttp/2.x/okhttp/</link>
+                <link>https://square.github.io/okhttp/3.x/okhttp/</link>
                 <link>http://www.joda.org/joda-time/apidocs/</link>
                 <link>https://www.javadoc.io/doc/com.google.code.gson/gson/${gson-version}</link>
                 <link>http://docs.swagger.io/swagger-core/apidocs/</link>
@@ -185,12 +185,12 @@
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.okhttp</groupId>
+      <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
       <version>${okhttp-version}</version>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okhttp</groupId>
+      <groupId>com.squareup.okhttp3</groupId>
       <artifactId>logging-interceptor</artifactId>
       <version>${okhttp-version}</version>
     </dependency>
@@ -297,13 +297,13 @@
             <id>get-appveyor-swagger</id>
             <!-- Note: Although this is a resource, it needs to run in
                  generate-sources rather than generate-resources because
-                 swagger-codegen (in generate-sources) depends on it. -->
+                 openapi-generator (in generate-sources) depends on it. -->
             <phase>generate-sources</phase>
             <goals>
               <goal>wget</goal>
             </goals>
             <configuration>
-              <url>https://github.com/kevinoid/appveyor-swagger/raw/${appveyor-swagger-version}/swagger.json</url>
+              <url>https://github.com/kevinoid/appveyor-swagger/raw/${appveyor-swagger-version}/openapi.json</url>
               <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
               <skipCache>true</skipCache>
             </configuration>
@@ -311,20 +311,20 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>io.swagger</groupId>
-        <artifactId>swagger-codegen-maven-plugin</artifactId>
-        <version>${swagger-codegen-maven-plugin-version}</version>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>${openapi-generator-maven-plugin-version}</version>
         <executions>
           <execution>
             <goals>
               <goal>generate</goal>
             </goals>
             <configuration>
-              <inputSpec>${project.build.directory}/generated-resources/swagger.json</inputSpec>
+              <inputSpec>${project.build.directory}/generated-resources/openapi.json</inputSpec>
               <invokerPackage>${project.groupId}</invokerPackage>
               <apiPackage>${project.groupId}.api</apiPackage>
               <modelPackage>${project.groupId}.model</modelPackage>
-              <language>java</language>
+              <generatorName>java</generatorName>
               <library>okhttp-gson</library>
               <configOptions>
                 <dateLibrary>joda</dateLibrary>
@@ -351,7 +351,7 @@
             </goals>
             <configuration>
               <sources>
-                <source>${project.build.directory}/generated-sources/swagger/src/main/java</source>
+                <source>${project.build.directory}/generated-sources/openapi/src/main/java</source>
               </sources>
             </configuration>
           </execution>
@@ -385,7 +385,7 @@
             <id>default-compile</id>
             <configuration>
               <compileSourceRoots>
-                <compileSourceRoot>${project.build.directory}/generated-sources/swagger/src/main/java</compileSourceRoot>
+                <compileSourceRoot>${project.build.directory}/generated-sources/openapi/src/main/java</compileSourceRoot>
               </compileSourceRoots>
               <showWarnings>false</showWarnings>
             </configuration>
@@ -461,7 +461,7 @@
               <goal>copy</goal>
             </goals>
             <configuration>
-              <sourceFile>${project.build.directory}/generated-sources/swagger/README.md</sourceFile>
+              <sourceFile>${project.build.directory}/generated-sources/openapi/README.md</sourceFile>
               <destinationFile>${project.build.directory}/generated-site/markdown/swaggerdocs/index.md</destinationFile>
             </configuration>
           </execution>
@@ -484,7 +484,7 @@
               <outputDirectory>${project.build.directory}/generated-site/markdown/swaggerdocs/docs</outputDirectory>
               <resources>
                 <resource>
-                  <directory>${project.build.directory}/generated-sources/swagger/docs</directory>
+                  <directory>${project.build.directory}/generated-sources/openapi/docs</directory>
                 </resource>
               </resources>
             </configuration>

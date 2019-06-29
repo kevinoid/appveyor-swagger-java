@@ -1,8 +1,9 @@
 package name.kevinlocke.appveyor.testutils;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -11,19 +12,23 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.testng.Reporter;
 
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor.Level;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 
 import name.kevinlocke.appveyor.ApiClient;
 import name.kevinlocke.appveyor.EnhancedApiClient;
+import name.kevinlocke.appveyor.auth.Authentication;
+import name.kevinlocke.appveyor.auth.HttpBearerAuth;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor.Level;
 
 public final class TestApiClient {
 	private static String getEnvRequired(String name) {
@@ -88,6 +93,12 @@ public final class TestApiClient {
 						ex);
 			}
 
+			// Remove default account, if present
+			int accountPos = baseUrl.indexOf("/account/");
+			if (accountPos >= 0) {
+				baseUrl = baseUrl.substring(0, accountPos);
+			}
+
 			baseUrl += "/account/" + accountNameEnc;
 			apiClient.setBasePath(baseUrl);
 		}
@@ -113,26 +124,56 @@ public final class TestApiClient {
 		}
 		Reporter.log(apiEndpointMsg.toString(), 1, true);
 
-		apiClient.setApiKeyPrefix("Bearer");
-		apiClient.setApiKey(apiToken);
+		Authentication apiTokenAuth = apiClient.getAuthentication("apiToken");
+		assert apiTokenAuth != null;
+		if (apiTokenAuth instanceof HttpBearerAuth) {
+			((HttpBearerAuth) apiTokenAuth).setBearerToken(apiToken);
+		} else {
+			// okhttp-gson doesn't support bearer in released versions
+			// https://github.com/OpenAPITools/openapi-generator/pull/3236
+			// Changing authentications is not permitted by API.
+			// Set using reflection.
 
-		OkHttpClient httpClient = apiClient.getHttpClient();
+			HttpBearerAuth bearerAuth = new HttpBearerAuth("bearer");
+			bearerAuth.setBearerToken(apiToken);
+
+			HashMap<String, Authentication> authentications =
+					new HashMap<>(apiClient.getAuthentications());
+			authentications.put("apiToken", bearerAuth);
+
+			try {
+				Field authsField =
+						ApiClient.class.getDeclaredField("authentications");
+				authsField.setAccessible(true);
+				authsField.set(apiClient, authentications);
+			} catch (IllegalArgumentException | IllegalAccessException
+					| NoSuchFieldException | SecurityException e) {
+				throw new RuntimeException("Unable to set authentications", e);
+			}
+		}
 
 		// The API can be very slow under load. Set generous timeout values.
-		httpClient.setConnectTimeout(30, TimeUnit.SECONDS);
-		httpClient.setReadTimeout(2, TimeUnit.MINUTES);
+		OkHttpClient.Builder httpClientBuilder =
+				apiClient.getHttpClient().newBuilder();
 
-		List<Interceptor> interceptors = httpClient.interceptors();
+		httpClientBuilder.connectTimeout(30, TimeUnit.SECONDS);
+		httpClientBuilder.readTimeout(2, TimeUnit.MINUTES);
 
-		URL swaggerUrl = TestApiClient.class.getResource("/swagger.json");
-		if (swaggerUrl == null) {
-			throw new RuntimeException("Unable to get swagger.json resource");
+		URL specUrl = TestApiClient.class.getResource("/openapi.json");
+		if (specUrl == null) {
+			throw new RuntimeException("Unable to get openapi.json resource");
 		}
-		String swaggerUrlOrContent = baseUrl == origBaseUrl
-				? swaggerUrl.toString()
-				: readModifiedSwaggerSpec(swaggerUrl, origBaseUrl, baseUrl);
-		interceptors.add(
-				new SwaggerRequestValidatorInterceptor(swaggerUrlOrContent));
+
+		String specUrlOrContent;
+		try {
+			specUrlOrContent = baseUrl == origBaseUrl ? specUrl.toString()
+					: readSpecWithBaseUrl(specUrl, baseUrl);
+		} catch (IOException e) {
+			throw new RuntimeException("Unable to read openapi.json", e);
+		}
+
+		httpClientBuilder.addInterceptor(
+				new SwaggerRequestValidatorInterceptor(specUrlOrContent));
 
 		// Note: Must be set after validator interceptor is added to print
 		// before any validation errors are thrown.
@@ -144,50 +185,42 @@ public final class TestApiClient {
 		logInterceptor.redactHeader("Proxy-Authenticate");
 		logInterceptor.redactHeader("Proxy-Authorization");
 		logInterceptor.redactHeader("WWW-Authenticate");
-		interceptors.add(logInterceptor);
+		httpClientBuilder.addInterceptor(logInterceptor);
+
+		apiClient.setHttpClient(httpClientBuilder.build());
 
 		apiClient.setJSON(new AssertLosslessJson());
 
 		return apiClient;
 	}
 
-	private static String readModifiedSwaggerSpec(URL swaggerUrl,
-			String origBaseUrl, String newBaseUrl) {
-		String swaggerContent;
-		try (InputStream swaggerStream = swaggerUrl.openStream()) {
-			swaggerContent = IOUtils.readAllAsString(swaggerStream,
-					StandardCharsets.UTF_8.name());
-		} catch (IOException ex) {
-			throw new RuntimeException("Error reading swagger.json", ex);
+	private static String readSpecWithBaseUrl(URL specUrl, String baseUrl)
+			throws IOException {
+		JsonObject specObject;
+		try (InputStreamReader specReader = new InputStreamReader(
+				specUrl.openStream(), StandardCharsets.UTF_8)) {
+			specObject = (JsonObject) new JsonParser().parse(specReader);
 		}
 
-		String origBasePath, newBasePath;
-		try {
-			origBasePath = new URL(origBaseUrl).getPath();
-			newBasePath = new URL(newBaseUrl).getPath();
-		} catch (MalformedURLException ex) {
-			throw new RuntimeException("Bad base URL", ex);
+		JsonPrimitive openapi = specObject.getAsJsonPrimitive("openapi");
+		if (openapi != null) {
+			// OpenAPI 3 or later
+			JsonArray servers = specObject.getAsJsonArray("servers");
+			for (JsonElement server : servers) {
+				((JsonObject) server).addProperty("url", baseUrl);
+			}
+		} else {
+			// OpenAPI 2 fka Swagger
+			String basePath;
+			try {
+				basePath = new URL(baseUrl).getPath();
+			} catch (MalformedURLException ex) {
+				throw new RuntimeException("Bad base URL", ex);
+			}
+			specObject.addProperty("basePath", basePath);
 		}
 
-		// FIXME: Should parse JSON/YAML, edit, then re-serialize. Non-trivial.
-		// Swagger uses Jackson with mapping to non-serializable classes.
-		// Simple string replacement is good enough for now.
-		Pattern basePathPattern =
-				Pattern.compile("([\"']?basePath[\"']?:\\s*[\"']?)"
-						+ Pattern.quote(origBasePath) + "([\"']?)");
-		Matcher matcher = basePathPattern.matcher(swaggerContent);
-		if (!matcher.find()) {
-			throw new RuntimeException("Can't find basePath in " + swaggerUrl);
-		}
-		String modifiedSpec = swaggerContent.substring(0, matcher.start())
-				+ matcher.group(1) + newBasePath + matcher.group(2)
-				+ swaggerContent.substring(matcher.end());
-		// Sanity check. If there are multiple basePath, naive search/replace
-		// may make unintended changes.
-		if (matcher.find()) {
-			throw new RuntimeException("Multiple basePath in " + swaggerUrl);
-		}
-		return modifiedSpec;
+		return specObject.toString();
 	}
 
 	// Prevent instantiation

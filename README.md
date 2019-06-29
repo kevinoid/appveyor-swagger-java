@@ -112,13 +112,13 @@ following steps to set up the project on their machine:
     (Ignore "Plugin execution not covered by lifecycle configuration"
     warnings.)
 3.  Run `mvn process-sources` in the project directory (outside of Eclipse).
-4.  Add `target/generated-sources/swagger/src/main/java` to the build path as
+4.  Add `target/generated-sources/openapi/src/main/java` to the build path as
     a source folder (e.g. in the Eclipse Package Explorer window, right-click
     the folder and choose **Build Path > Use as Source Folder**).
 5.  (Optional) Set **Ignore optional compile problems: Yes** on
-    `target/generated-sources/swagger/src/main/java` in the Build
+    `target/generated-sources/openapi/src/main/java` in the Build
     Path configuration (since the code is automatically generated and requires
-    changes in `swagger-codegen` to fix).
+    changes in `openapi-generator` to fix).
 6.  (Optional) Configure **Java Code Style > Formatter** in the project
     properties to use the profile from `.eclipse-formatter.xml`.
 7.  (Optional) [Format source code on

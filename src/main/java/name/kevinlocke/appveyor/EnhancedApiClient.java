@@ -5,7 +5,7 @@ import java.lang.reflect.Type;
 
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.Response;
+import okhttp3.Response;
 
 /**
  * AppVeyor API Client with enhancements not present in the generated

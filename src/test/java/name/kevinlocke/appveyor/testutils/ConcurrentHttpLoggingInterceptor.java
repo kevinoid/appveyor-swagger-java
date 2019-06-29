@@ -17,7 +17,7 @@
  * Based on
  * https://github.com/square/okhttp/blob/5f4a2642/okhttp-logging-interceptor/src/main/java/okhttp3/logging/HttpLoggingInterceptor.java
  * Changes:
- * - Add a request UUID to make it easier to match respopnse to request.
+ * - Add a request UUID to make it easier to match response to request.
  * - Use a single logger.log per request/response to avoid interleaving.
  *
  * @formatter:off
@@ -33,18 +33,18 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.squareup.okhttp.Connection;
-import com.squareup.okhttp.Headers;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
-import com.squareup.okhttp.internal.http.HttpEngine;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor.Level;
-import com.squareup.okhttp.logging.HttpLoggingInterceptor.Logger;
+import okhttp3.Connection;
+import okhttp3.Headers;
+import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okhttp3.internal.http.HttpHeaders;
+import okhttp3.logging.HttpLoggingInterceptor.Level;
+import okhttp3.logging.HttpLoggingInterceptor.Logger;
 
 import okio.Buffer;
 import okio.BufferedSource;
@@ -112,9 +112,9 @@ public final class ConcurrentHttpLoggingInterceptor implements Interceptor {
     StringBuilder requestMessage = new StringBuilder("--> ")
         .append(requestId).append('\n')
 		.append(request.method())
-        .append(' ').append(request.httpUrl());
+        .append(' ').append(request.url());
     if (connection != null) {
-      requestMessage.append(' ').append(connection.getProtocol());
+      requestMessage.append(' ').append(connection.protocol());
     }
     if (!logHeaders && hasRequestBody) {
       requestMessage.append(" (").append(requestBody.contentLength()).append("-byte body)");
@@ -210,14 +210,14 @@ public final class ConcurrentHttpLoggingInterceptor implements Interceptor {
         logHeader(responseMessage, headers, i);
       }
 
-      if (!logBody || !HttpEngine.hasBody(response)) {
+      if (!logBody || !HttpHeaders.hasBody(response)) {
         responseMessage.append("<-- END HTTP\n");
       } else if (bodyHasUnknownEncoding(response.headers())) {
         responseMessage.append("<-- END HTTP (encoded body omitted)\n");
       } else {
         BufferedSource source = responseBody.source();
         source.request(Long.MAX_VALUE); // Buffer the entire body.
-        Buffer buffer = source.buffer();
+        Buffer buffer = source.getBuffer();
 
         Long gzippedLength = null;
         if ("gzip".equalsIgnoreCase(headers.get("Content-Encoding"))) {
