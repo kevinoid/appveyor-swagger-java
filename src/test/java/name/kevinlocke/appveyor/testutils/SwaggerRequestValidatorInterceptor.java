@@ -185,20 +185,6 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		Request okRequest = chain.request();
 		Response okResponse = chain.proceed(okRequest);
 
-		RequestBody requestBody = okRequest.body();
-		MediaType requestType =
-				requestBody != null ? requestBody.contentType() : null;
-		ResponseBody responseBody = okResponse.body();
-		MediaType responseType =
-				responseBody != null ? responseBody.contentType() : null;
-		if ((requestType != null && !isJson(requestType))
-				|| (responseType != null && !isJson(responseType))) {
-			// Don't validate non-JSON requests or responses since their
-			// handling is not well specified in the OpenAPI spec and
-			// swagger-request-validator doesn't support file type.
-			return okResponse;
-		}
-
 		com.atlassian.oai.validator.model.Request vRequest =
 				okhttpToValidatorRequest(okRequest);
 		com.atlassian.oai.validator.model.Response vResponse =
