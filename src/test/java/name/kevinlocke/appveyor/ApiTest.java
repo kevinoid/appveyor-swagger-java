@@ -1269,6 +1269,19 @@ public class ApiTest {
 	}
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
+	public void getProjectBuildByVersion() throws ApiException {
+		String projectAccount = testProject.getAccountName();
+		String slug = testProject.getSlug();
+		ProjectBuildResults lastProjectBuild =
+				projectApi.getProjectBuildByVersion(projectAccount, slug,
+						testBuild.getVersion());
+		Project project = lastProjectBuild.getProject();
+		assertModelEqualsExcluding(project, testProject, projectExcludes);
+		Build lastBuild = lastProjectBuild.getBuild();
+		assertModelEqualsExcluding(lastBuild, testBuild, buildJobExcludes);
+	}
+
+	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getProjectLastBuild() throws ApiException {
 		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
