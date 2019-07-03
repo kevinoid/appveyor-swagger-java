@@ -126,18 +126,27 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		Method requestMethod = Method.valueOf(request.method());
 		HttpUrl requestUrl = request.url();
 		String requestPath = requestUrl.encodedPath();
-		RequestBody requestBody = request.body();
 		SimpleRequest.Builder requestBuilder =
 				new SimpleRequest.Builder(requestMethod, requestPath);
-		if (requestBody != null) {
-			String requestBodyString = requestBodyToString(requestBody);
-			requestBuilder = requestBuilder.withBody(requestBodyString);
-		}
+
 		for (int i = 0; i < requestUrl.querySize(); ++i) {
 			String name = requestUrl.queryParameterName(i);
 			String value = requestUrl.queryParameterValue(i);
 			requestBuilder = requestBuilder.withQueryParam(name, value);
 		}
+
+		// openapi-generator sends empty object in DELETE request body
+		// None of AppVeyor's DELETE operations expect this.  Ignore it.
+		// https://github.com/OpenAPITools/openapi-generator/issues/3276
+		if (requestMethod != Method.DELETE)
+		{
+			RequestBody requestBody = request.body();
+			if (requestBody != null) {
+				String requestBodyString = requestBodyToString(requestBody);
+				requestBuilder = requestBuilder.withBody(requestBodyString);
+			}
+		}
+
 		return requestBuilder.build();
 	}
 
