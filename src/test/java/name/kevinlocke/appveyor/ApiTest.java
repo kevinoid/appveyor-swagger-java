@@ -1098,6 +1098,47 @@ public class ApiTest {
 		}
 	}
 
+	@Test(dependsOnMethods = "waitForBuild", groups = "project")
+	public void getProjectBranchStatusBadge()
+			throws ApiException, FileNotFoundException, IOException {
+		String statusBadgeId = testProjectConfig.getStatusBadgeId();
+		File pngBadge = projectApi.getProjectBranchStatusBadge(statusBadgeId,
+				"master", false, false, null, null, null);
+		assertTrue(pngBadge.exists());
+		long pngSize = pngBadge.length();
+		try {
+			assertIsPng(pngBadge.toPath());
+		} finally {
+			pngBadge.delete();
+		}
+
+		File retinaBadge = projectApi.getProjectBranchStatusBadge(statusBadgeId,
+				"master", false, true, null, null, null);
+		assertTrue(retinaBadge.exists());
+		long retinaSize = retinaBadge.length();
+		try {
+			assertIsPng(retinaBadge.toPath());
+
+			assertTrue(retinaSize > pngSize);
+		} finally {
+			retinaBadge.delete();
+		}
+
+		String uid = new BigInteger(128, new Random()).toString(36);
+		File svgBadge = projectApi.getProjectBranchStatusBadge(statusBadgeId,
+				"master", true, false, uid, uid, uid);
+		assertTrue(svgBadge.exists());
+		try {
+			assertIsSvg(svgBadge.toPath());
+
+			String svgBadgeText =
+					new String(Files.readAllBytes(svgBadge.toPath()));
+			assertTrue(svgBadgeText.contains(uid));
+		} finally {
+			svgBadge.delete();
+		}
+	}
+
 	@Test
 	public void getPublicProjectStatusBadge()
 			throws ApiException, FileNotFoundException, IOException {
