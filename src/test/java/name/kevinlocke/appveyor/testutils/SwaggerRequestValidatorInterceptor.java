@@ -83,7 +83,7 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 		if (responseBody.contentLength() == 0) {
 			return "";
 		}
-		try (Buffer buffer = source.buffer().clone()) {
+		try (Buffer buffer = source.getBuffer().clone()) {
 			return buffer.readString(charset);
 		}
 	}
@@ -143,10 +143,11 @@ public class SwaggerRequestValidatorInterceptor implements Interceptor {
 
 	protected static String requestBodyToString(RequestBody requestBody)
 			throws IOException {
-		Buffer buffer = new Buffer();
-		requestBody.writeTo(buffer);
-		Charset charset = guessCharset(requestBody);
-		return buffer.readString(charset);
+		try (Buffer buffer = new Buffer()) {
+			requestBody.writeTo(buffer);
+			Charset charset = guessCharset(requestBody);
+			return buffer.readString(charset);
+		}
 	}
 
 	protected final OpenApiInteractionValidator validator;
