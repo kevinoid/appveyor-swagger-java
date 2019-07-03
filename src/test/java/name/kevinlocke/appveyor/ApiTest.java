@@ -122,6 +122,19 @@ public class ApiTest {
 		return Base64.getUrlEncoder().encodeToString(randBytes);
 	}
 
+	private static String getEnvRequired(String name) {
+		String value = System.getenv(name);
+		if (value != null) {
+			value = value.trim();
+			if (value.length() > 0) {
+				return value;
+			}
+		}
+
+		throw new RuntimeException(
+				name + " environment variable must be set and not empty");
+	}
+
 	public static final String TEST_BADGE_PROVIDER =
 			RepositoryProvider.GITHUB.toString();
 	public static final String TEST_BADGE_ACCOUNT = "gruntjs";
@@ -177,7 +190,8 @@ public class ApiTest {
 					"nuGetFeed", "repositoryBranch", "securityDescriptor",
 					"updated");
 
-	protected final ApiClient apiClient;
+	protected final String accountName;
+
 	protected final BuildApi buildApi;
 	protected final CollaboratorApi collaboratorApi;
 	protected final DeploymentApi deploymentApi;
@@ -204,8 +218,10 @@ public class ApiTest {
 	protected volatile UserModel testUser;
 
 	public ApiTest() {
-		apiClient = TestApiClient.getApiClientFromEnv("APPVEYOR_API_TOKEN",
-				"APPVEYOR_ACCOUNT_NAME");
+		accountName = getEnvRequired("APPVEYOR_ACCOUNT_NAME");
+
+		String token = getEnvRequired("APPVEYOR_API_TOKEN");
+		ApiClient apiClient = TestApiClient.getApiClient(token);
 		buildApi = new BuildApi(apiClient);
 		collaboratorApi = new CollaboratorApi(apiClient);
 		deploymentApi = new DeploymentApi(apiClient);
@@ -270,7 +286,7 @@ public class ApiTest {
 	@AfterGroups(groups = "role", alwaysRun = true)
 	public void cleanupTestRole() throws ApiException {
 		if (testRole != null) {
-			roleApi.deleteRole(testRole.getRoleId());
+			roleApi.deleteRole(accountName, testRole.getRoleId());
 			testRole = null;
 		}
 	}
@@ -278,7 +294,7 @@ public class ApiTest {
 	public void cleanupOldTestRoles() throws ApiException {
 		for (Role role : getRolesInternal()) {
 			if (role.getName().startsWith(TEST_ROLE_PREFIX)) {
-				roleApi.deleteRole(role.getRoleId());
+				roleApi.deleteRole(accountName, role.getRoleId());
 			}
 		}
 	}
@@ -286,14 +302,15 @@ public class ApiTest {
 	@Test(groups = "role")
 	public void addRole() throws ApiException {
 		RoleAddition roleAddition = new RoleAddition().name(TEST_ROLE_NAME);
-		RoleWithGroups role = roleApi.addRole(roleAddition);
+		RoleWithGroups role = roleApi.addRole(accountName, roleAddition);
 		testRole = role;
 		assertEquals(role.getName(), TEST_ROLE_NAME);
 	}
 
 	@Test(dependsOnMethods = "addRole", groups = "role")
 	public void getRole() throws ApiException {
-		RoleWithGroups gotRole = roleApi.getRole(testRole.getRoleId());
+		RoleWithGroups gotRole =
+				roleApi.getRole(accountName, testRole.getRoleId());
 		assertModelEqualsExcluding(gotRole, testRole, excludeUpdated);
 	}
 
@@ -309,7 +326,7 @@ public class ApiTest {
 			if (systemRolesLock.tryLock()) {
 				try {
 					if (systemRolesByName == null) {
-						List<Role> roles = roleApi.getRoles();
+						List<Role> roles = roleApi.getRoles(accountName);
 						Map<String, Role> newSystemRolesByName =
 								new TreeMap<>();
 						for (Role role : roles) {
@@ -326,7 +343,7 @@ public class ApiTest {
 			}
 		}
 
-		return roleApi.getRoles();
+		return roleApi.getRoles(accountName);
 	}
 
 	protected Role getRoleByName(String roleName) throws ApiException {
@@ -388,7 +405,7 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addRole", groups = "role")
 	public void updateRole() throws ApiException {
-		RoleWithGroups updatedRole = roleApi.updateRole(testRole);
+		RoleWithGroups updatedRole = roleApi.updateRole(accountName, testRole);
 		assertNotNull(updatedRole);
 		assertNotNull(updatedRole.getUpdated());
 		assertModelAgreesExcluding(updatedRole, testRole, excludeUpdated);
@@ -398,15 +415,18 @@ public class ApiTest {
 	@AfterGroups(groups = "user", alwaysRun = true)
 	public void cleanupTestInvitation() throws ApiException {
 		if (testInvitation != null) {
-			collaboratorApi.deleteCollaborator(testCollaborator.getUserId());
+			collaboratorApi.deleteCollaborator(accountName,
+					testCollaborator.getUserId());
 			testCollaborator = null;
 		}
 	}
 
 	public void cleanupOldTestInvitations() throws ApiException {
-		for (UserInvitationModel invitation : userApi.getUserInvitations()) {
+		for (UserInvitationModel invitation : userApi
+				.getUserInvitations(accountName)) {
 			if (invitation.getEmail().equals(TEST_COLLABORATOR_EMAIL)) {
-				userApi.cancelUserInvitation(invitation.getUserInvitationId());
+				userApi.cancelUserInvitation(accountName,
+						invitation.getUserInvitationId());
 			}
 		}
 	}
@@ -417,7 +437,7 @@ public class ApiTest {
 		int roleId =
 				getSystemRoleByName(TEST_COLLABORATOR_ROLE_NAME).getRoleId();
 		inviteUserRequest.setRoleId(roleId);
-		userApi.inviteUser(inviteUserRequest);
+		userApi.inviteUser(accountName, inviteUserRequest);
 	}
 
 	@Test(groups = "user")
@@ -446,7 +466,8 @@ public class ApiTest {
 
 	protected UserInvitationModel getUserInvitationByEmail(
 			String invitationEmail) throws ApiException {
-		List<UserInvitationModel> invitations = userApi.getUserInvitations();
+		List<UserInvitationModel> invitations =
+				userApi.getUserInvitations(accountName);
 		for (UserInvitationModel invitation : invitations) {
 			if (invitation.getEmail().equals(invitationEmail)) {
 				return invitation;
@@ -461,7 +482,8 @@ public class ApiTest {
 				getUserInvitationByEmail(TEST_COLLABORATOR_EMAIL);
 		assertNotNull(invitation, "Invitation not found");
 
-		userApi.cancelUserInvitation(invitation.getUserInvitationId());
+		userApi.cancelUserInvitation(accountName,
+				invitation.getUserInvitationId());
 
 		UserInvitationModel canceledInvitation =
 				getUserInvitationByEmail(TEST_COLLABORATOR_EMAIL);
@@ -495,21 +517,21 @@ public class ApiTest {
 	@AfterGroups(groups = "user", alwaysRun = true)
 	public void cleanupTestUser() throws ApiException {
 		if (testUser != null) {
-			userApi.deleteUser(testUser.getUserId());
+			userApi.deleteUser(accountName, testUser.getUserId());
 			testUser = null;
 		}
 	}
 
 	public void cleanupOldTestUsers() throws ApiException {
-		for (UserModel user : userApi.getUsers()) {
+		for (UserModel user : userApi.getUsers(accountName)) {
 			if (user.getEmail().endsWith(TEST_USER_EMAIL_AT_DOMAIN)) {
-				userApi.deleteUser(user.getUserId());
+				userApi.deleteUser(accountName, user.getUserId());
 			}
 		}
 	}
 
 	protected UserModel getUserByEmail(String email) throws ApiException {
-		List<UserModel> users = userApi.getUsers();
+		List<UserModel> users = userApi.getUsers(accountName);
 		for (UserModel user : users) {
 			if (user.getEmail().equals(TEST_USER_EMAIL)) {
 				return user;
@@ -530,7 +552,8 @@ public class ApiTest {
 	@Test(dependsOnMethods = "getUsers", groups = "user")
 	public void getUser() throws ApiException {
 		Integer testUserId = testUser.getUserId();
-		UserAccountRolesResults userRoles = userApi.getUser(testUserId);
+		UserAccountRolesResults userRoles =
+				userApi.getUser(accountName, testUserId);
 		UserModel gotUser = userRoles.getUser();
 		assertNotNull(gotUser, "Test user not found");
 		assertModelEqualsExcluding(gotUser, testUser, excludeUpdated);
@@ -539,10 +562,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "getUsers", groups = "user")
 	public void updateUser() throws ApiException {
-		userApi.updateUser(testUser);
+		userApi.updateUser(accountName, testUser);
 
 		UserAccountRolesResults updatedUserWithRoles =
-				userApi.getUser(testUser.getUserId());
+				userApi.getUser(accountName, testUser.getUserId());
 		UserModel updatedUser = updatedUserWithRoles.getUser();
 		assertNotNull(updatedUser.getUpdated());
 		assertModelEqualsExcluding(updatedUser, testUser, excludeUpdated);
@@ -552,22 +575,25 @@ public class ApiTest {
 	@AfterGroups(groups = "collaborator", alwaysRun = true)
 	public void cleanupTestCollaborator() throws ApiException {
 		if (testCollaborator != null) {
-			collaboratorApi.deleteCollaborator(testCollaborator.getUserId());
+			collaboratorApi.deleteCollaborator(accountName,
+					testCollaborator.getUserId());
 			testCollaborator = null;
 		}
 	}
 
 	public void cleanupOldTestCollaborators() throws ApiException {
-		for (UserModel user : collaboratorApi.getCollaborators()) {
+		for (UserModel user : collaboratorApi.getCollaborators(accountName)) {
 			if (user.getEmail().equals(TEST_COLLABORATOR_EMAIL)) {
-				collaboratorApi.deleteCollaborator(user.getUserId());
+				collaboratorApi.deleteCollaborator(accountName,
+						user.getUserId());
 			}
 		}
 	}
 
 	protected UserModel getCollaboratorByEmail(String collaboratorEmail)
 			throws ApiException {
-		List<UserModel> collaborators = collaboratorApi.getCollaborators();
+		List<UserModel> collaborators =
+				collaboratorApi.getCollaborators(accountName);
 		for (UserModel collaborator : collaborators) {
 			if (collaborator.getEmail().equals(collaboratorEmail)) {
 				return collaborator;
@@ -590,8 +616,8 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "getCollaborators", groups = "collaborator")
 	public void getCollaborator() throws ApiException {
-		UserAccountRolesResults collaboratorWithRoles =
-				collaboratorApi.getCollaborator(testCollaborator.getUserId());
+		UserAccountRolesResults collaboratorWithRoles = collaboratorApi
+				.getCollaborator(accountName, testCollaborator.getUserId());
 		assertNotNull(collaboratorWithRoles, "Test collaborator not found");
 
 		UserModel gotCollaborator = collaboratorWithRoles.getUser();
@@ -606,13 +632,13 @@ public class ApiTest {
 		CollaboratorUpdate collabUpdate = new CollaboratorUpdate();
 		collabUpdate.setUserId(testCollaborator.getUserId());
 		collabUpdate.setRoleId(testCollaborator.getRoleId());
-		collaboratorApi.updateCollaborator(collabUpdate);
+		collaboratorApi.updateCollaborator(accountName, collabUpdate);
 	}
 
 	@AfterGroups(groups = "environment", alwaysRun = true)
 	public void cleanupTestEnvironment() throws ApiException {
 		if (testEnvironment != null) {
-			environmentApi.deleteEnvironment(
+			environmentApi.deleteEnvironment(accountName,
 					testEnvironment.getDeploymentEnvironmentId());
 			testEnvironment = null;
 		}
@@ -620,9 +646,9 @@ public class ApiTest {
 
 	public void cleanupOldTestEnvironments() throws ApiException {
 		for (DeploymentEnvironmentLookupModel environment : environmentApi
-				.getEnvironments()) {
+				.getEnvironments(accountName)) {
 			if (environment.getName().startsWith(TEST_ENVIRONMENT_PREFIX)) {
-				environmentApi.deleteEnvironment(
+				environmentApi.deleteEnvironment(accountName,
 						environment.getDeploymentEnvironmentId());
 			}
 		}
@@ -641,7 +667,7 @@ public class ApiTest {
 						.provider(DeploymentProviderType.WEBHOOK)
 						.settings(settings);
 		DeploymentEnvironmentWithSettings environment =
-				environmentApi.addEnvironment(environmentAddition);
+				environmentApi.addEnvironment(accountName, environmentAddition);
 		normalizeSecurity(environment);
 		// updateEnvironment fails with null projects
 		// getEnvironments assertion expects empty projects.
@@ -656,7 +682,7 @@ public class ApiTest {
 	protected DeploymentEnvironmentLookupModel getEnvironmentByName(String name)
 			throws ApiException {
 		for (DeploymentEnvironmentLookupModel environment : environmentApi
-				.getEnvironments()) {
+				.getEnvironments(accountName)) {
 			if (environment.getName().equals(name)) {
 				return environment;
 			}
@@ -675,7 +701,7 @@ public class ApiTest {
 	public void getEnvironmentSettings() throws ApiException {
 		Integer testEnvId = testEnvironment.getDeploymentEnvironmentId();
 		DeploymentEnvironmentSettingsResults gotEnvSettingsObj =
-				environmentApi.getEnvironmentSettings(testEnvId);
+				environmentApi.getEnvironmentSettings(accountName, testEnvId);
 		DeploymentEnvironmentWithSettings gotEnv =
 				gotEnvSettingsObj.getEnvironment();
 
@@ -697,7 +723,7 @@ public class ApiTest {
 	@Test(dependsOnMethods = "addEnvironment", groups = "environment")
 	public void updateEnvironment() throws ApiException {
 		DeploymentEnvironmentWithSettings updatedEnv =
-				environmentApi.updateEnvironment(testEnvironment);
+				environmentApi.updateEnvironment(accountName, testEnvironment);
 		assertNotNull(updatedEnv);
 		normalizeSecurity(updatedEnv);
 		assertModelEqualsExcluding(updatedEnv, testEnvironment, excludeUpdated);
@@ -714,7 +740,7 @@ public class ApiTest {
 	}
 
 	public void cleanupOldTestProjects() throws ApiException {
-		for (Project project : projectApi.getProjects()) {
+		for (Project project : projectApi.getProjects(accountName)) {
 			if (project.getRepositoryName().equals(TEST_PROJECT_REPO_NAME)) {
 				projectApi.deleteProject(project.getAccountName(),
 						project.getSlug());
@@ -726,7 +752,7 @@ public class ApiTest {
 	public void encryptValue() throws ApiException {
 		EncryptRequest encryptReq = new EncryptRequest();
 		encryptReq.setPlainValue(TEST_ENCRYPT_VALUE);
-		String encrypted = projectApi.encryptValue(encryptReq);
+		String encrypted = projectApi.encryptValue(accountName, encryptReq);
 		// This isn't an API guarantee, just a sanity check
 		assertTrue(Pattern.matches("^[A-Za-z0-9/+]+={0,2}$", encrypted),
 				encrypted + " is base64-encoded string");
@@ -737,7 +763,7 @@ public class ApiTest {
 		ProjectAddition projectAddition = new ProjectAddition();
 		projectAddition.setRepositoryProvider(TEST_PROJECT_REPO_PROVIDER);
 		projectAddition.setRepositoryName(TEST_PROJECT_REPO_NAME);
-		Project project = projectApi.addProject(projectAddition);
+		Project project = projectApi.addProject(accountName, projectAddition);
 		testProject = project;
 
 		assertEquals(project.getRepositoryType(), TEST_PROJECT_REPO_PROVIDER);
@@ -748,7 +774,7 @@ public class ApiTest {
 	public void getProjects() throws ApiException {
 		int testProjectId = testProject.getProjectId();
 		Project foundProject = null;
-		for (Project project : projectApi.getProjects()) {
+		for (Project project : projectApi.getProjects(accountName)) {
 			if (project.getProjectId() == testProjectId) {
 				foundProject = project;
 				break;
@@ -764,15 +790,15 @@ public class ApiTest {
 	// up in all queries).
 	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void cancelBuild() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		BuildStartRequest buildStart = new BuildStartRequest()
-				.accountName(accountName).projectSlug(slug);
-		Build cancelBuild = buildApi.startBuild(buildStart);
+				.accountName(projectAccount).projectSlug(slug);
+		Build cancelBuild = buildApi.startBuild(projectAccount, buildStart);
 		String version = cancelBuild.getVersion();
-		buildApi.cancelBuild(accountName, slug, version);
-		ProjectBuildResults cancelledBuildProject =
-				projectApi.getProjectBuildByVersion(accountName, slug, version);
+		buildApi.cancelBuild(projectAccount, slug, version);
+		ProjectBuildResults cancelledBuildProject = projectApi
+				.getProjectBuildByVersion(projectAccount, slug, version);
 		Build cancelledBuild = cancelledBuildProject.getBuild();
 		Status cancelledBuildStatus = cancelledBuild.getStatus();
 		assertTrue(cancelledBuildStatus == Status.CANCELLED
@@ -781,10 +807,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void getProjectSettings() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		ProjectSettingsResults settings =
-				projectApi.getProjectSettings(accountName, slug);
+				projectApi.getProjectSettings(projectAccount, slug);
 		ProjectWithConfiguration projectConfig = settings.getSettings();
 		normalizeSecurity(projectConfig);
 		testProjectConfig = projectConfig;
@@ -814,9 +840,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "addProject", groups = "project")
 	public void getProjectSettingsYaml() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		testProjectYaml = projectApi.getProjectSettingsYaml(accountName, slug);
+		testProjectYaml =
+				projectApi.getProjectSettingsYaml(projectAccount, slug);
 	}
 
 	// Run after updateProjectSettingsYaml to ensure build scripts are
@@ -851,12 +878,12 @@ public class ApiTest {
 		config.setTestMode(TestMode.SCRIPT);
 		config.setTestScripts(Arrays.asList(new Script()
 				.language(ScriptLanguage.PS).script(TEST_PROJECT_TEST_SCRIPT)));
-		projectApi.updateProject(projectConfig);
+		projectApi.updateProject(accountName, projectConfig);
 
-		String accountName = projectConfig.getAccountName();
+		String projectAccount = projectConfig.getAccountName();
 		String slug = projectConfig.getSlug();
 		ProjectSettingsResults updatedProjectSettings =
-				projectApi.getProjectSettings(accountName, slug);
+				projectApi.getProjectSettings(projectAccount, slug);
 		ProjectWithConfiguration updatedProject =
 				updatedProjectSettings.getSettings();
 		assertNotNull(updatedProject.getUpdated());
@@ -872,10 +899,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "updateProject", groups = "project")
 	public void getProjectEnvironmentVariables() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		List<SecurableVariable> envVars =
-				projectApi.getProjectEnvironmentVariables(accountName, slug);
+				projectApi.getProjectEnvironmentVariables(projectAccount, slug);
 
 		List<SecurableVariable> testVars =
 				testProjectConfig.getConfiguration().getEnvironmentVariables();
@@ -886,21 +913,21 @@ public class ApiTest {
 	@Test(dependsOnMethods = "getProjectEnvironmentVariables",
 			groups = "project")
 	public void updateProjectEnvironmentVariables() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		List<SecurableVariable> newVars = Arrays.asList(new SecurableVariable()
 				.name("UPDATED")
 				.value(new SecurableValue().isEncrypted(false).value("value")));
-		projectApi.updateProjectEnvironmentVariables(accountName, slug,
+		projectApi.updateProjectEnvironmentVariables(projectAccount, slug,
 				newVars);
 		List<SecurableVariable> envVars =
-				projectApi.getProjectEnvironmentVariables(accountName, slug);
+				projectApi.getProjectEnvironmentVariables(projectAccount, slug);
 		assertModelAgrees(envVars, newVars);
 	}
 
 	@Test(dependsOnMethods = "getProjectSettingsYaml", groups = "project")
 	public void updateProjectSettingsYaml() throws ApiException, IOException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 
 		File settingsFile = File.createTempFile(null, ".yaml");
@@ -910,7 +937,7 @@ public class ApiTest {
 				outStream.write(testProjectYaml.getBytes());
 			}
 
-			projectApi.updateProjectSettingsYaml(accountName, slug,
+			projectApi.updateProjectSettingsYaml(projectAccount, slug,
 					settingsFile);
 		} finally {
 			settingsFile.delete();
@@ -923,32 +950,32 @@ public class ApiTest {
 	@Test(dependsOnMethods = {"cancelBuild", "updateProject"},
 			groups = "project")
 	public void updateProjectBuildNumber() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		ProjectBuildNumberUpdate pbnu = new ProjectBuildNumberUpdate()
 				.nextBuildNumber(TEST_PROJECT_BUILD_NUMBER);
-		projectApi.updateProjectBuildNumber(accountName, slug, pbnu);
+		projectApi.updateProjectBuildNumber(projectAccount, slug, pbnu);
 	}
 
 	@Test(dependsOnMethods = "updateProjectBuildNumber", groups = "project")
 	public void startBuild() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		BuildStartRequest buildStart =
-				new BuildStartRequest().accountName(accountName)
+				new BuildStartRequest().accountName(projectAccount)
 						.projectSlug(slug).branch(TEST_PROJECT_BRANCH)
 						.putEnvironmentVariablesItem("TEST_VAR", "1");
-		Build build = buildApi.startBuild(buildStart);
+		Build build = buildApi.startBuild(projectAccount, buildStart);
 		testBuild = build;
 		assertEquals(build.getBranch(), TEST_PROJECT_BRANCH);
 		assertEquals(build.getBuildNumber(), TEST_PROJECT_BUILD_NUMBER);
 	}
 
-	private ProjectBuildResults waitForBuild(String accountName, String slug,
+	private ProjectBuildResults waitForBuild(String projectAccount, String slug,
 			String version) throws ApiException, InterruptedException {
 		while (true) {
 			ProjectBuildResults projectBuild = projectApi
-					.getProjectBuildByVersion(accountName, slug, version);
+					.getProjectBuildByVersion(projectAccount, slug, version);
 			Status buildStatus = projectBuild.getBuild().getStatus();
 			if (buildStatus != Status.QUEUED && buildStatus != Status.STARTING
 					&& buildStatus != Status.RUNNING) {
@@ -989,7 +1016,7 @@ public class ApiTest {
 		try {
 			ReRunBuildRequest reRunIncompleteBuild = new ReRunBuildRequest()
 					.buildId(buildId).reRunIncomplete(true);
-			buildApi.reRunBuild(reRunIncompleteBuild);
+			buildApi.reRunBuild(accountName, reRunIncompleteBuild);
 			fail("Expected ApiException due to reRunIncomplete: true");
 		} catch (ApiExceptionWithModel ex) {
 			assertEquals(ex.getCode(), 500);
@@ -998,7 +1025,7 @@ public class ApiTest {
 		}
 
 		ReRunBuildRequest reRunBuild = new ReRunBuildRequest().buildId(buildId);
-		Build rebuild = buildApi.reRunBuild(reRunBuild);
+		Build rebuild = buildApi.reRunBuild(accountName, reRunBuild);
 		testRebuild = rebuild;
 		assertEquals(rebuild.getCommitId(), origBuild.getCommitId());
 		assertEquals(rebuild.getProjectId(), origBuild.getProjectId());
@@ -1168,10 +1195,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "getBuildArtifacts", groups = "project")
 	public void getProjectArtifact() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		String testName = testArtifact.getFileName();
-		File artifact1 = projectApi.getProjectArtifact(accountName, slug,
+		File artifact1 = projectApi.getProjectArtifact(projectAccount, slug,
 				testName, null, null, null, null, null);
 		assertTrue(artifact1.exists());
 		try {
@@ -1181,7 +1208,7 @@ public class ApiTest {
 		}
 
 		String testPath = testArtifactPath.getFileName();
-		File artifact2 = projectApi.getProjectArtifact(accountName, slug,
+		File artifact2 = projectApi.getProjectArtifact(projectAccount, slug,
 				testPath, null, null, null, null, null);
 		assertTrue(artifact2.exists());
 		try {
@@ -1202,10 +1229,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getProjectLastBuild() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		ProjectBuildResults lastProjectBuild =
-				projectApi.getProjectLastBuild(accountName, slug);
+				projectApi.getProjectLastBuild(projectAccount, slug);
 		Project project = lastProjectBuild.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build lastBuild = lastProjectBuild.getBuild();
@@ -1214,11 +1241,11 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getProjectLastBuildBranch() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		String branch = testBuild.getBranch();
-		ProjectBuildResults branchBuild =
-				projectApi.getProjectLastBuildBranch(accountName, slug, branch);
+		ProjectBuildResults branchBuild = projectApi
+				.getProjectLastBuildBranch(projectAccount, slug, branch);
 		Project project = branchBuild.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
 		Build build = branchBuild.getBuild();
@@ -1227,10 +1254,10 @@ public class ApiTest {
 
 	@Test(dependsOnMethods = "waitForBuild", groups = "project")
 	public void getProjectHistory() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
-		ProjectHistory history =
-				projectApi.getProjectHistory(accountName, slug, 10, null, null);
+		ProjectHistory history = projectApi.getProjectHistory(projectAccount,
+				slug, 10, null, null);
 
 		Project project = history.getProject();
 		assertModelEqualsExcluding(project, testProject, projectExcludes);
@@ -1246,16 +1273,17 @@ public class ApiTest {
 	@Test(dependsOnMethods = {"addEnvironment", "addProject",
 			"successfulBuild"}, groups = {"environment", "project"})
 	public void startDeployment() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 		String buildJobId = testBuild.getJobs().get(0).getJobId();
 		DeploymentStartRequest deploymentStart = new DeploymentStartRequest();
 		deploymentStart.setEnvironmentName(testEnvironment.getName());
-		deploymentStart.setAccountName(accountName);
+		deploymentStart.setAccountName(projectAccount);
 		deploymentStart.setProjectSlug(slug);
 		deploymentStart.setBuildVersion(testBuild.getVersion());
 		deploymentStart.setBuildJobId(buildJobId);
-		Deployment deployment = deploymentApi.startDeployment(deploymentStart);
+		Deployment deployment =
+				deploymentApi.startDeployment(projectAccount, deploymentStart);
 		DeploymentEnvironment environment = deployment.getEnvironment();
 		normalizeSecurity(environment);
 		testDeployment = deployment;
@@ -1278,7 +1306,7 @@ public class ApiTest {
 		Status deploymentStatus;
 		while (true) {
 			ProjectDeployment projectDeployment =
-					deploymentApi.getDeployment(deploymentId);
+					deploymentApi.getDeployment(accountName, deploymentId);
 			deployment = projectDeployment.getDeployment();
 			deploymentStatus = deployment.getStatus();
 			if (deploymentStatus != Status.QUEUED
@@ -1299,8 +1327,8 @@ public class ApiTest {
 			groups = {"environment", "project"})
 	public void getEnvironmentDeployments() throws ApiException {
 		Integer testEnvId = testEnvironment.getDeploymentEnvironmentId();
-		DeploymentEnvironmentDeploymentsResults envDeps =
-				environmentApi.getEnvironmentDeployments(testEnvId);
+		DeploymentEnvironmentDeploymentsResults envDeps = environmentApi
+				.getEnvironmentDeployments(accountName, testEnvId);
 
 		List<EnvironmentDeploymentModel> deployments = envDeps.getDeployments();
 		assertEquals(deployments.size(), 1);
@@ -1312,7 +1340,7 @@ public class ApiTest {
 	@Test(dependsOnMethods = "waitForDeployment",
 			groups = {"environment", "project"})
 	public void getProjectDeployments() throws ApiException {
-		String accountName = testProject.getAccountName();
+		String projectAccount = testProject.getAccountName();
 		String slug = testProject.getSlug();
 
 		// getProjectDeployments is flaky and often returns 500 due to timeout.
@@ -1330,7 +1358,7 @@ public class ApiTest {
 		ProjectDeploymentsResults projectDeployments;
 		try {
 			projectDeployments =
-					projectApi.getProjectDeployments(accountName, slug, 11);
+					projectApi.getProjectDeployments(projectAccount, slug, 11);
 		} catch (ApiExceptionWithModel ex) {
 			String errMsg = ex.getResponseModel().getMessage();
 			if (Pattern.matches("(?i)\\btime\\s*out\\b", errMsg)) {
