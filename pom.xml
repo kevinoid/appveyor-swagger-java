@@ -90,7 +90,7 @@
     <nexus-staging-maven-plugin-version>1.6.8</nexus-staging-maven-plugin-version>
     <okhttp-version>2.7.5</okhttp-version>
     <swagger-annotations-version>1.5.21</swagger-annotations-version>
-    <swagger-codegen-maven-plugin-version>2.2.2</swagger-codegen-maven-plugin-version>
+    <swagger-codegen-maven-plugin-version>2.4.13</swagger-codegen-maven-plugin-version>
     <swagger-request-validator-version>2.2.2</swagger-request-validator-version>
     <!-- After updating testng, check JDK 7 support and enable CI testing.
          See https://github.com/cbeust/testng/commit/132a807 -->
