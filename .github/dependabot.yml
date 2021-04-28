@@ -1,0 +1,19 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "13:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: com.googlecode.maven-download-plugin:download-maven-plugin
+    versions:
+    - 1.6.1
+    - 1.6.2
+  - dependency-name: io.swagger:swagger-codegen-maven-plugin
+    versions:
+    - 2.4.18
+  - dependency-name: org.testng:testng
+    versions:
+    - 7.3.0
