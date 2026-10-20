@@ -79,7 +79,7 @@
     <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
     <maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
     <maven-project-info-reports-plugin-version>2.9</maven-project-info-reports-plugin-version>
-    <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
+    <maven-release-plugin-version>3.3.1</maven-release-plugin-version>
     <maven-replacer-plugin-version>1.5.3</maven-replacer-plugin-version>
     <maven-resources-plugin-version>3.2.0</maven-resources-plugin-version>
     <maven-scm-publish-plugin-version>1.1</maven-scm-publish-plugin-version>
