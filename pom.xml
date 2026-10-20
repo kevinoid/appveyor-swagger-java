@@ -78,7 +78,7 @@
     <jsonassert-version>1.5.0</jsonassert-version>
     <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
     <maven-javadoc-plugin-version>2.10.4</maven-javadoc-plugin-version>
-    <maven-project-info-reports-plugin-version>2.9</maven-project-info-reports-plugin-version>
+    <maven-project-info-reports-plugin-version>3.9.0</maven-project-info-reports-plugin-version>
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
     <maven-replacer-plugin-version>1.5.3</maven-replacer-plugin-version>
     <maven-resources-plugin-version>3.2.0</maven-resources-plugin-version>
